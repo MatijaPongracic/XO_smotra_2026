@@ -1,0 +1,32 @@
+EASY
+PLAYER FIRST:
+Wins: 0
+Draws: 0
+Loses: 0
+
+ROBOT FIRST:
+Wins: 0
+Draws: 0
+Loses: 0
+
+MEDIUM
+PLAYER FIRST:
+Wins: 0
+Draws: 0
+Loses: 0
+
+ROBOT FIRST:
+Wins: 0
+Draws: 0
+Loses: 0
+
+HARD
+PLAYER FIRST:
+Wins: 0
+Draws: 0
+Loses: 0
+
+ROBOT FIRST:
+Wins: 0
+Draws: 0
+Loses: 0

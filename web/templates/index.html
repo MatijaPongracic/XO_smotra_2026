@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XO Robot - Digital Scoreboard</title>
+  <link rel="stylesheet" href="/static/css/style.css?v=20261017_4">
+</head>
+
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-box">
+        <span class="brand-icon">🤖</span>
+        <span class="brand-title">XO VISION ROBOT</span>
+        <span class="brand-badge">System Ready</span>
+      </div>
+      <div class="header-actions">
+        <button id="btn-sound-toggle" class="sound-toggle-btn" title="Toggle Sound Effects">
+          🔊 SOUND: ON
+        </button>
+        <button id="btn-fullscreen-toggle" class="sound-toggle-btn" title="Fullscreen">
+          ⛶ FULLSCREEN
+        </button>
+      </div>
+
+    </header>
+
+    <!-- 1. ATTRACT MODE / MAIN MENU -->
+    <main id="attract-screen" class="attract-container">
+      <!-- Background floating marks -->
+      <div class="floating-marks-bg">
+        <span class="floating-mark mark-x" style="top: 15%; left: 10%;">X</span>
+        <span class="floating-mark mark-o" style="top: 25%; right: 12%;">O</span>
+        <span class="floating-mark mark-x" style="bottom: 20%; right: 15%;">X</span>
+        <span class="floating-mark mark-o" style="bottom: 18%; left: 14%;">O</span>
+        <span class="floating-mark mark-x" style="top: 45%; left: 3%;">X</span>
+        <span class="floating-mark mark-o" style="top: 50%; right: 5%;">O</span>
+      </div>
+
+      <div class="attract-content">
+        <div class="hero-title-box">
+          <h1>TIC - TAC - TOE</h1>
+          <p>CHALLENGE THE INDUSTRIAL ROBOT IN REAL TIME</p>
+        </div>
+
+        <!-- Phone connection card -->
+        <div class="qr-card">
+          <div class="qr-image-wrapper">
+            <img id="qr-image" src="/api/qrcode.png" alt="QR Code for controller">
+          </div>
+          <div class="qr-instructions">
+            <span class="scan-text">📱 Scan with smartphone</span>
+            <span class="sub-text">Choose settings on your phone and press PLAY</span>
+          </div>
+
+        </div>
+      </div>
+    </main>
+
+    <!-- 2. SPLASH INTRO OVERLAY ("THE GAME BEGINS!") -->
+    <div id="splash-overlay" class="splash-overlay">
+      <div class="splash-content">
+        <div class="splash-title">THE GAME BEGINS!</div>
+        <div class="splash-subtitle">Get ready, game is starting...</div>
+      </div>
+    </div>
+
+    <!-- 3. ACTIVE GAME DISPLAY (CANVAS & STATUS) -->
+    <main id="game-screen" class="game-active-container" style="display: none;">
+      <!-- Top status bar with players and score -->
+      <section class="game-top-bar">
+        <!-- Player (Left) -->
+        <div class="player-info-card">
+          <div id="player-avatar" class="player-avatar avatar-x">X</div>
+          <div class="player-details">
+            <h3>PLAYER <span id="player-char-label">(X)</span></h3>
+            <p>Challenger</p>
+          </div>
+        </div>
+
+        <!-- Center: Scoreboard & Difficulty -->
+        <div class="score-pill-container">
+          <div class="score-badge">
+            <span id="score-player" class="score-num">0</span>
+            <span class="score-divider">:</span>
+            <span id="score-robot" class="score-num">0</span>
+          </div>
+          <span id="difficulty-badge" class="difficulty-pill">DIFFICULTY: MEDIUM</span>
+        </div>
+
+        <!-- Robot (Right) -->
+        <div class="player-info-card reverse">
+          <div id="robot-avatar" class="player-avatar avatar-o">O</div>
+          <div class="player-details">
+            <h3>ROBOT <span id="robot-char-label">(O)</span></h3>
+            <p>UR5e System</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Warning Alert Banner for Multiple Moves / Irregularities -->
+      <div id="multi-move-alert" class="multi-move-alert" style="display: none;">
+        <span class="alert-icon">⚠️</span>
+        <div class="alert-text">
+          <strong>WARNING: DRAW ONLY 1 MARK!</strong>
+          <span>Multiple new marks detected on the board. Erase the extra mark with an eraser to continue the game.</span>
+        </div>
+      </div>
+
+      <!-- 3x3 Digital Board -->
+      <section class="board-wrapper">
+        <div id="board-grid" class="board-grid">
+          <!-- 9 cells dynamically rendered in scoreboard.js -->
+        </div>
+      </section>
+
+      <!-- Bottom Status Bar -->
+      <footer class="instruction-banner">
+        <div class="instruction-text-box">
+          <span id="instruction-icon" class="instruction-icon">⚡</span>
+          <h2 id="instruction-text">WAITING FOR GAME TO START</h2>
+        </div>
+        <button id="btn-ingame-reset" class="btn-secondary">
+          🔄 New Game / Abort
+        </button>
+      </footer>
+    </main>
+
+    <!-- 4. VICTORY / GAME OVER MODAL (10s COUNTDOWN TIMER) -->
+    <div id="gameover-modal" class="gameover-overlay">
+      <div class="gameover-card">
+        <div id="gameover-icon" class="gameover-icon">🏆</div>
+        <h2 id="gameover-title" class="gameover-title win-player">PLAYER WINS!</h2>
+        <p id="gameover-subtitle" class="countdown-label">Congratulations on defeating the robot!</p>
+
+        <!-- Countdown to main menu -->
+        <div class="countdown-box">
+          <div class="countdown-label">
+            Returning to main menu in <strong id="countdown-seconds">10</strong> s...
+          </div>
+          <div class="progress-track">
+            <div id="countdown-progress" class="progress-fill" style="width: 100%;"></div>
+          </div>
+        </div>
+
+        <button id="btn-reset-now" class="btn-secondary" style="margin-top: 10px; width: 100%;">
+          🔄 New game now
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/sound.js?v=20261021_1"></script>
+  <script src="/static/js/scoreboard.js?v=20261021_1"></script>
+</body>
+
+</html>

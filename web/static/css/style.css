@@ -1,0 +1,996 @@
+/* ==============================================================================
+   STYLE.CSS - Moderni vizualni stil za digitalni semafor i mobilni kontroler
+   ============================================================================== */
+
+:root {
+  --bg-main: #0b1329;
+  --bg-card: #1e293b;
+  --bg-card-hover: #334155;
+  --bg-glass: rgba(30, 41, 59, 0.88);
+  --border-glass: rgba(255, 255, 255, 0.22);
+  --border-glass-glow: rgba(56, 189, 248, 0.5);
+
+  --color-x: #38bdf8;
+  --color-x-glow: rgba(56, 189, 248, 0.65);
+  --color-o: #fb7185;
+  --color-o-glow: rgba(251, 113, 133, 0.65);
+
+  --color-win: #10b981;
+  --color-win-glow: rgba(16, 185, 129, 0.65);
+  --color-warn: #f59e0b;
+  --color-danger: #ef4444;
+
+  --text-primary: #ffffff;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+
+  --font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+  --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Pozadinski suptilni radijalni gradijent */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(circle at 50% 20%, rgba(30, 58, 138, 0.18), transparent 70%),
+              radial-gradient(circle at 80% 80%, rgba(88, 28, 135, 0.12), transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Glavni layout kontejner */
+.app-container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-height: 100vh;
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: clamp(8px, 1.5vh, 16px) clamp(12px, 2vw, 24px);
+  overflow: hidden;
+}
+
+/* ==============================================================================
+   ZAGLAVLJE (HEADER)
+   ============================================================================== */
+.app-header {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: clamp(6px, 1vh, 12px) clamp(12px, 1.5vw, 20px);
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
+  border-radius: 16px;
+  margin-bottom: clamp(6px, 1vh, 12px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.brand-box {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-icon {
+  font-size: 26px;
+  filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));
+}
+
+.brand-title {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-transform: uppercase;
+}
+
+.brand-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--color-x);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Zvučni gumb */
+.sound-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  color: var(--text-primary);
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.sound-toggle-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--color-x);
+  transform: translateY(-1px);
+}
+
+.sound-toggle-btn.muted {
+  color: var(--text-muted);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* ==============================================================================
+   ATTRACT MODE (POČETNI EKRAN / MAIN MENU)
+   ============================================================================== */
+.attract-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  text-align: center;
+  padding: clamp(6px, 1.2vh, 16px);
+  overflow: hidden;
+}
+
+/* Plutajuće animirane X i O pozadinske ikone */
+.floating-marks-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.floating-mark {
+  position: absolute;
+  font-size: clamp(28px, 5vw, 70px);
+  font-weight: 900;
+  opacity: 0.12;
+  animation: floatMark 8s ease-in-out infinite alternate;
+}
+
+.floating-mark.mark-x {
+  color: var(--color-x);
+  text-shadow: 0 0 30px var(--color-x-glow);
+}
+
+.floating-mark.mark-o {
+  color: var(--color-o);
+  text-shadow: 0 0 30px var(--color-o-glow);
+}
+
+@keyframes floatMark {
+  0% { transform: translateY(0) rotate(0deg) scale(1); }
+  50% { transform: translateY(-20px) rotate(10deg) scale(1.05); }
+  100% { transform: translateY(15px) rotate(-8deg) scale(0.95); }
+}
+
+.attract-content {
+  position: relative;
+  z-index: 2;
+  max-width: 900px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(16px, 2.8vh, 32px);
+}
+
+.hero-title-box h1 {
+  font-size: clamp(30px, 5.2vh, 60px);
+  font-weight: 900;
+  letter-spacing: 2px;
+  line-height: 1.1;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #ffffff 30%, #38bdf8 70%, #818cf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 8px 20px rgba(56, 189, 248, 0.35));
+}
+
+.hero-title-box p {
+  font-size: clamp(14px, 2vh, 20px);
+  color: var(--text-secondary);
+  margin-top: 8px;
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+/* Kartica s QR Kodom */
+.qr-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.6), 0 0 25px rgba(56, 189, 248, 0.18);
+  border-radius: 28px;
+  padding: clamp(20px, 3.2vh, 38px) clamp(26px, 4vw, 46px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(14px, 2.2vh, 22px);
+  max-width: min(500px, 92vw);
+  width: 100%;
+  animation: cardPulse 4s ease-in-out infinite alternate;
+}
+
+@keyframes cardPulse {
+  0% { box-shadow: 0 10px 35px rgba(0, 0, 0, 0.6), 0 0 20px rgba(56, 189, 248, 0.15); }
+  100% { box-shadow: 0 14px 45px rgba(0, 0, 0, 0.7), 0 0 35px rgba(56, 189, 248, 0.3); }
+}
+
+.qr-image-wrapper {
+  background: #ffffff;
+  padding: 12px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+}
+
+.qr-image-wrapper img {
+  width: clamp(180px, 26vh, 270px);
+  height: clamp(180px, 26vh, 270px);
+  display: block;
+}
+
+.qr-instructions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.qr-instructions .scan-text {
+  font-size: clamp(20px, 2.4vh, 25px);
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.qr-instructions .sub-text {
+  font-size: clamp(14px, 1.7vh, 17px);
+  color: var(--text-secondary);
+}
+
+.direct-link-pill {
+  display: none !important;
+}
+
+
+
+/* ==============================================================================
+   SPLASH ANIMACIJA ("THE GAME BEGINS!")
+   ============================================================================== */
+.splash-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(7, 9, 14, 0.94);
+  backdrop-filter: blur(20px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.splash-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.splash-content {
+  text-align: center;
+  transform: scale(0.7);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.splash-overlay.active .splash-content {
+  transform: scale(1);
+}
+
+.splash-title {
+  font-size: clamp(48px, 8vw, 92px);
+  font-weight: 900;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #38bdf8, #ec4899, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 35px rgba(56, 189, 248, 0.6));
+  animation: glowPulse 1.2s infinite alternate;
+}
+
+@keyframes glowPulse {
+  0% { filter: drop-shadow(0 0 25px rgba(56, 189, 248, 0.4)); }
+  100% { filter: drop-shadow(0 0 45px rgba(236, 72, 153, 0.8)); }
+}
+
+.splash-subtitle {
+  font-size: clamp(18px, 3vw, 28px);
+  color: var(--text-primary);
+  margin-top: 14px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+/* ==============================================================================
+   AKTIVNI DIGITALNI KANVAS & SEMAFOR
+   ============================================================================== */
+.game-active-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 1vh, 12px);
+  justify-content: space-between;
+  overflow: hidden;
+}
+
+/* Gornji status bar u igri */
+.game-top-bar {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
+  border-radius: 16px;
+  padding: clamp(6px, 1.2vh, 12px) clamp(12px, 2vw, 24px);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.35);
+}
+
+.player-info-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.player-info-card.reverse {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+.player-avatar {
+  width: clamp(36px, 5vh, 46px);
+  height: clamp(36px, 5vh, 46px);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(20px, 3vh, 24px);
+  font-weight: 900;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.player-avatar.avatar-x {
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--color-x);
+  border: 2px solid var(--color-x);
+  box-shadow: 0 0 20px var(--color-x-glow);
+}
+
+.player-avatar.avatar-o {
+  background: rgba(244, 63, 94, 0.15);
+  color: var(--color-o);
+  border: 2px solid var(--color-o);
+  box-shadow: 0 0 20px var(--color-o-glow);
+}
+
+.player-details h3 {
+  font-size: clamp(13px, 1.8vh, 16px);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.player-details p {
+  font-size: clamp(10px, 1.4vh, 12px);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Srednji rezultat (Scoreboard) */
+.score-pill-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.score-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.9);
+  padding: 4px 16px;
+  border-radius: 30px;
+  border: 1px solid var(--border-glass);
+}
+
+.score-num {
+  font-size: clamp(18px, 2.8vh, 24px);
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.score-divider {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.difficulty-pill {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-warn);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ==============================================================================
+   3X3 DIGITALNA PLOČA (BOARD)
+   ============================================================================== */
+.board-wrapper {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4px;
+  overflow: hidden;
+}
+
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: clamp(10px, 1.8vmin, 18px);
+  aspect-ratio: 1 / 1;
+  height: 100%;
+  max-height: calc(100vh - clamp(170px, 25vh, 220px));
+  max-width: calc(100vh - clamp(170px, 25vh, 220px));
+  width: auto;
+  position: relative;
+  background: #090e1a;
+  padding: clamp(10px, 1.8vmin, 18px);
+  border-radius: clamp(18px, 2.5vmin, 28px);
+  border: 2.5px solid rgba(56, 189, 248, 0.55);
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.5), 0 0 35px rgba(56, 189, 248, 0.25);
+  box-sizing: border-box;
+}
+
+.board-cell {
+  background: #1e293b;
+  border-radius: clamp(12px, 1.8vmin, 20px);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+  box-shadow: inset 0 2px 10px rgba(255, 255, 255, 0.05), 0 4px 15px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  container-type: size;
+}
+
+.board-cell:hover {
+  border-color: rgba(56, 189, 248, 0.7);
+  background: #273549;
+}
+
+/* Jednostavna, mirna animacija ulaza simbola bez treperenja - uvećani simboli za visoku vidljivost */
+.cell-mark {
+  font-size: clamp(85px, 21vmin, 240px);
+  font-size: clamp(75px, 92cqh, 280px);
+  font-weight: 900;
+  line-height: 1;
+  opacity: 0;
+  transform: scale(0.85);
+  transition: opacity 0.18s ease-out, transform 0.18s ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.cell-mark.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.cell-mark.mark-x {
+  color: var(--color-x);
+  text-shadow: 0 0 25px var(--color-x-glow);
+}
+
+.cell-mark.mark-o {
+  color: var(--color-o);
+  text-shadow: 0 0 25px var(--color-o-glow);
+}
+
+/* Polje s neispravnim potezom */
+.board-cell.cell-invalid {
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: var(--color-danger) !important;
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.5);
+  animation: shakeCell 0.5s ease-in-out infinite alternate;
+}
+
+.invalid-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: var(--color-danger);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+/* Pobjednička polja */
+.board-cell.cell-winner {
+  background: rgba(16, 185, 129, 0.25) !important;
+  border-color: var(--color-win) !important;
+  box-shadow: 0 0 30px var(--color-win-glow);
+}
+
+/* ==============================================================================
+   DONJA STATUSNA TRAKA (INSTRUCTION BANNER)
+   ============================================================================== */
+.instruction-banner {
+  flex-shrink: 0;
+  background: var(--bg-card);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border-glass);
+  border-radius: 16px;
+  padding: clamp(8px, 1.2vh, 14px) clamp(16px, 2vw, 24px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+.instruction-text-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.instruction-icon {
+  font-size: clamp(20px, 3vh, 26px);
+}
+
+.instruction-text-box h2 {
+  font-size: clamp(16px, 2.2vh, 24px);
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #ffffff;
+}
+
+/* Stil za specifičnu uputu "NACRTAJTE MREŽU 3x3" */
+.instruction-draw-grid {
+  color: var(--color-warn) !important;
+  text-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
+  animation: pulseText 1.5s infinite alternate;
+}
+
+@keyframes pulseText {
+  0% { opacity: 0.85; }
+  100% { opacity: 1; text-shadow: 0 0 25px rgba(245, 158, 11, 0.9); }
+}
+
+/* Stil za upozorenje "NACRTAJTE SAMO 1 ZNAK" / neispravan potez */
+.instruction-warning {
+  color: #f87171 !important;
+  text-shadow: 0 0 20px rgba(239, 68, 68, 0.85) !important;
+  animation: pulseWarning 1s infinite alternate;
+}
+
+@keyframes pulseWarning {
+  0% { transform: scale(1); opacity: 0.9; }
+  100% { transform: scale(1.02); opacity: 1; text-shadow: 0 0 30px rgba(239, 68, 68, 1); }
+}
+
+.multi-move-alert {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: rgba(239, 68, 68, 0.22);
+  border: 2.5px solid #ef4444;
+  border-radius: 16px;
+  padding: 12px 24px;
+  margin: 0 auto 16px auto;
+  max-width: 720px;
+  width: 90%;
+  box-shadow: 0 8px 30px rgba(239, 68, 68, 0.4);
+  animation: pulseWarning 1s infinite alternate;
+  box-sizing: border-box;
+}
+
+.multi-move-alert .alert-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.multi-move-alert .alert-text {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.multi-move-alert .alert-text strong {
+  font-size: 18px;
+  font-weight: 900;
+  color: #fca5a5;
+  letter-spacing: 0.5px;
+}
+
+.multi-move-alert .alert-text span {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fee2e2;
+}
+
+.btn-secondary {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.btn-secondary:hover {
+  background: var(--color-danger);
+  color: #ffffff;
+  border-color: var(--color-danger);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+}
+
+/* ==============================================================================
+   POBJEDNIČKI MODAL S TAJMEROM OD 10 SEKUNDI
+   ============================================================================== */
+.gameover-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(7, 9, 14, 0.88);
+  backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.gameover-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.gameover-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 32px;
+  padding: 40px 50px;
+  text-align: center;
+  max-width: 550px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.gameover-icon {
+  font-size: 64px;
+}
+
+.gameover-title {
+  font-size: clamp(32px, 5vw, 44px);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.gameover-title.win-player {
+  color: var(--color-win);
+  text-shadow: 0 0 25px var(--color-win-glow);
+}
+
+.gameover-title.win-robot {
+  color: var(--color-o);
+  text-shadow: 0 0 25px var(--color-o-glow);
+}
+
+.gameover-title.win-draw {
+  color: var(--color-warn);
+  text-shadow: 0 0 25px rgba(245, 158, 11, 0.5);
+}
+
+/* Progresna traka za 10 sekundi */
+.countdown-box {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.countdown-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.progress-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, var(--color-x), var(--color-win));
+  transition: width 1s linear;
+}
+
+/* ==============================================================================
+   MOBILNI KONTROLER SPECIFIČNI STILOVI
+   ============================================================================== */
+.controller-body {
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  background-color: #0b0f19 !important;
+}
+
+.controller-container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  height: auto !important;
+  max-height: none !important;
+  width: 100%;
+  max-width: 580px;
+  margin: 0 auto;
+  padding: 16px 16px clamp(80px, 15vh, 130px) 16px !important;
+  padding-bottom: calc(clamp(80px, 15vh, 130px) + env(safe-area-inset-bottom, 24px)) !important;
+  box-sizing: border-box;
+}
+
+.controller-wrapper {
+  max-width: 520px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-bottom: 24px;
+}
+
+/* Minijaturna 3x3 ploča za mobilni kontroler */
+.mini-board-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 1 / 1;
+  margin: 10px auto;
+  background: #090e1a !important;
+  padding: 12px !important;
+  border-radius: 20px !important;
+  border: 2px solid rgba(56, 189, 248, 0.5) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(56, 189, 248, 0.15) !important;
+  box-sizing: border-box !important;
+}
+
+.mini-board-grid .board-cell {
+  aspect-ratio: 1 / 1;
+  border-radius: 14px;
+  background: #1e293b !important;
+  border: 2px solid rgba(255, 255, 255, 0.25) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.05), 0 4px 12px rgba(0, 0, 0, 0.3);
+  container-type: size;
+}
+
+.mini-board-grid .cell-mark {
+  font-size: 64px !important;
+  font-size: clamp(44px, 86cqh, 75px) !important;
+  font-weight: 900;
+  opacity: 1 !important;
+  transform: scale(1) !important;
+}
+
+.controller-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: 20px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-group {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.btn-option {
+  flex: 1;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  color: var(--text-primary);
+  padding: 12px 10px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  text-align: center;
+}
+
+.btn-option:hover {
+  background: var(--bg-card-hover);
+}
+
+.btn-option:disabled,
+.btn-option.disabled {
+  opacity: 0.35;
+  cursor: not-allowed !important;
+  pointer-events: none;
+  filter: grayscale(0.8);
+}
+
+.btn-option.active {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: var(--color-x);
+  color: var(--color-x);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+}
+
+.btn-option.opt-o.active {
+  background: rgba(244, 63, 94, 0.2);
+  border-color: var(--color-o);
+  color: var(--color-o);
+  box-shadow: 0 0 16px rgba(244, 63, 94, 0.3);
+}
+
+/* Glavni CTA gumb "ZAPOČNI IGRU" */
+.btn-cta-start {
+  background: linear-gradient(135deg, #059669, #10b981);
+  border: none;
+  color: #ffffff;
+  padding: 18px 24px;
+  border-radius: 18px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 8px 30px rgba(16, 185, 129, 0.4);
+  transition: var(--transition-smooth);
+  text-transform: uppercase;
+  margin-top: 10px;
+}
+
+.btn-cta-start:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 36px rgba(16, 185, 129, 0.6);
+}
+
+.btn-cta-start:active {
+  transform: translateY(0);
+}
+
+/* Responzivnost za male ekrane */
+@media (max-width: 768px) {
+  .app-container {
+    padding: 10px 14px;
+  }
+  .app-header {
+    padding: 10px 16px;
+    margin-bottom: 12px;
+  }
+  .game-top-bar {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    text-align: center;
+  }
+  .player-info-card, .player-info-card.reverse {
+    justify-content: center;
+    text-align: center;
+  }
+  .board-grid {
+    width: 90vw;
+    height: 90vw;
+    gap: 10px;
+    padding: 10px;
+  }
+}

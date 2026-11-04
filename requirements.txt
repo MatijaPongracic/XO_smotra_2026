@@ -1,0 +1,31 @@
+# ==============================================================================
+# Zahtjevi projekta: Diplomski rad (RealSense Vision & Game Controller)
+# Preporučena verzija Pythona: Python 3.11 (64-bit)
+# Instalacija: pip install -r requirements.txt
+# ==============================================================================
+
+# Računalni vid i obrada slike
+opencv-contrib-python>=4.8.0
+numpy>=1.24.0
+Pillow>=10.0.0
+
+# Intel RealSense kamera (akvizicija slike i kalibracija)
+pyrealsense2>=2.50.0
+
+# Umjetna inteligencija i detekcija (YOLO, MediaPipe, PyTorch)
+# Napomena: Ako se koristi GPU akceleracija (NVIDIA CUDA), PyTorch se može
+# instalirati s odgovarajućim CUDA paketom (npr. cu118 ili cu121)
+torch>=2.0.0
+torchvision>=0.15.0
+ultralytics>=8.0.0
+mediapipe>=0.10.0
+
+# Robotika i digitalni blizanac
+robodk>=5.5.0
+
+# Web poslužitelj, WebSocket komunikacija i generiranje QR koda
+fastapi>=0.100.0
+uvicorn[standard]>=0.22.0
+websockets>=11.0
+qrcode>=7.4.0
+

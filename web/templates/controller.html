@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>XO Robot - Mobile Controller</title>
+  <link rel="stylesheet" href="/static/css/style.css?v=20261017_2">
+</head>
+<body class="controller-body">
+  <div class="controller-container">
+    <!-- Header -->
+    <header class="app-header" style="padding: 10px 16px; margin-bottom: 16px;">
+      <div class="brand-box">
+        <span class="brand-icon">📱</span>
+        <span class="brand-title" style="font-size: 16px;">GAME CONTROLLER</span>
+      </div>
+      <span class="brand-badge" style="font-size: 10px;">Connected</span>
+    </header>
+
+    <!-- 1. SETUP SECTION -->
+    <main id="setup-section" class="controller-wrapper">
+      <!-- Player Symbol -->
+      <div class="controller-card">
+        <div class="card-title"><span>👤</span> Choose your symbol</div>
+        <div class="btn-group" data-setting="player_char">
+          <button class="btn-option active" data-value="X">SYMBOL X</button>
+          <button class="btn-option opt-o" data-value="O">SYMBOL O</button>
+        </div>
+      </div>
+
+      <!-- Difficulty -->
+      <div class="controller-card">
+        <div class="card-title"><span>⚡</span> Robot difficulty</div>
+        <div class="btn-group" data-setting="difficulty">
+          <button class="btn-option" data-value="EASY">EASY</button>
+          <button class="btn-option active" data-value="MEDIUM">MEDIUM</button>
+          <button class="btn-option" data-value="HARD">HARD</button>
+        </div>
+      </div>
+
+      <!-- First Move -->
+      <div class="controller-card">
+        <div class="card-title"><span>🎲</span> Who makes the first move?</div>
+        <div class="btn-group" data-setting="first_move">
+          <button class="btn-option active" data-value="PLAYER">PLAYER</button>
+          <button class="btn-option" data-value="ROBOT">ROBOT</button>
+          <button class="btn-option" data-value="RANDOM">RANDOM</button>
+        </div>
+      </div>
+
+      <!-- Grid Drawer -->
+      <div class="controller-card">
+        <div class="card-title"><span>📐</span> Who prepares the 3x3 grid?</div>
+        <div class="btn-group" data-setting="grid_drawer">
+          <button class="btn-option active" data-value="PLAYER">✍️ PLAYER (OR ALREADY DRAWN)</button>
+          <button class="btn-option" data-value="ROBOT">🤖 ROBOT DRAWS</button>
+        </div>
+      </div>
+
+      <!-- Options if robot draws grid -->
+      <div id="robot-grid-options" class="controller-card" style="display: none; border-color: rgba(56, 189, 248, 0.4); background: rgba(30, 41, 59, 0.95);">
+        <div class="card-title" style="color: var(--color-x);"><span>⚙️</span> Robot grid drawing settings</div>
+
+        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Grid size:</div>
+        <div class="btn-group" data-setting="robot_grid_size">
+          <button class="btn-option" data-value="SMALL">{{GRID_SMALL_LABEL}}</button>
+          <button class="btn-option active" data-value="MEDIUM">{{GRID_MEDIUM_LABEL}}</button>
+          <button class="btn-option" data-value="LARGE">{{GRID_LARGE_LABEL}}</button>
+        </div>
+
+        <div style="font-size: 12px; color: var(--text-secondary); margin: 10px 0 4px 0;">Board position:</div>
+        <div class="btn-group" data-setting="robot_grid_pos">
+          <button class="btn-option" data-value="UP">Top</button>
+          <button class="btn-option active" data-value="CENTER">Center</button>
+          <button class="btn-option" data-value="DOWN">Bottom</button>
+        </div>
+        <div id="robot-grid-pos-hint" style="display: none; font-size: 11px; color: #f59e0b; margin-top: 8px; font-weight: 600;">
+          ⚠️ Large grid is fixed to Center position
+        </div>
+      </div>
+
+      <!-- Start Button -->
+      <button id="btn-start-game" class="btn-cta-start">
+        ▶ START GAME
+      </button>
+    </main>
+
+    <!-- 2. ACTIVE GAME SECTION -->
+    <main id="active-section" class="controller-wrapper" style="display: none; text-align: center;">
+      <div class="controller-card" style="border-color: rgba(56, 189, 248, 0.3);">
+        <h2 id="active-game-title" style="font-size: 20px; font-weight: 800; color: #fff;">GAME IN PROGRESS</h2>
+        <p id="active-game-subtitle" style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+          Watch the board on the table and the live scoreboard!
+        </p>
+
+        <div id="live-turn-badge" style="font-size: 16px; font-weight: 800; margin: 12px 0; color: var(--color-x);">
+          🎯 CURRENT TURN: PLAYER
+        </div>
+
+        <div id="gameover-mobile-banner" style="display: none; margin: 12px 0; padding: 14px; border-radius: 14px; font-size: 18px; font-weight: 900; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+        </div>
+
+
+        <div id="live-instruction" style="font-size: 14px; font-weight: 700; color: var(--color-warn); background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px;">
+          DRAW A 3x3 GRID
+        </div>
+      </div>
+
+      <!-- Mini 3x3 board -->
+      <div class="controller-card">
+        <div class="card-title"><span>👀</span> Current board state</div>
+        <div id="mini-board" class="mini-board-grid" style="display: grid !important; grid-template-columns: repeat(3, 1fr) !important; grid-template-rows: repeat(3, 1fr) !important; gap: 10px !important; width: 100% !important; max-width: 320px !important; aspect-ratio: 1 / 1 !important; margin: 10px auto !important; padding: 12px !important; background: #090e1a !important; border-radius: 20px !important; border: 2px solid rgba(56, 189, 248, 0.5) !important; box-sizing: border-box !important;">
+          <!-- 9 miniature cells -->
+        </div>
+      </div>
+
+      <button id="btn-reset-mobile" class="btn-secondary" style="margin-top: 10px; padding: 14px; font-size: 14px;">
+        🔄 Abort game / New game
+      </button>
+    </main>
+  </div>
+
+  <script src="/static/js/controller.js?v=20261021_1"></script>
+</body>
+</html>
