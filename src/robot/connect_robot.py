@@ -579,9 +579,18 @@ def compute_ur5e_fk(q_rad, output_in_mm=True):
     Osigurava poziciju prirubnice (tool0) neovisno o aktivnom TCP-u u PolyScopeu.
     """
     import config
-    d_m = getattr(config, 'UR5_DH_D', getattr(config, 'UR5E_DH_D', [0.089159, 0.0, 0.0, 0.10915, 0.09465, 0.0823]))
-    a_m = getattr(config, 'UR5_DH_A', getattr(config, 'UR5E_DH_A', [0.0, -0.425, -0.39225, 0.0, 0.0, 0.0]))
-    alpha = getattr(config, 'UR5_DH_ALPHA', getattr(config, 'UR5E_DH_ALPHA', [np.pi / 2.0, 0.0, 0.0, np.pi / 2.0, -np.pi / 2.0, 0.0]))
+    if hasattr(config, 'ACTIVE_DH_D'):
+        d_m = config.ACTIVE_DH_D
+        a_m = config.ACTIVE_DH_A
+        alpha = config.ACTIVE_DH_ALPHA
+    elif getattr(config, 'IS_UR5E', False):
+        d_m = getattr(config, 'UR5E_DH_D', [0.1625, 0.0, 0.0, 0.1333, 0.0997, 0.0996])
+        a_m = getattr(config, 'UR5E_DH_A', [0.0, -0.425, -0.3922, 0.0, 0.0, 0.0])
+        alpha = getattr(config, 'UR5E_DH_ALPHA', [np.pi / 2.0, 0.0, 0.0, np.pi / 2.0, -np.pi / 2.0, 0.0])
+    else:
+        d_m = getattr(config, 'UR5_DH_D', [0.089159, 0.0, 0.0, 0.10915, 0.09465, 0.0823])
+        a_m = getattr(config, 'UR5_DH_A', [0.0, -0.425, -0.39225, 0.0, 0.0, 0.0])
+        alpha = getattr(config, 'UR5_DH_ALPHA', [np.pi / 2.0, 0.0, 0.0, np.pi / 2.0, -np.pi / 2.0, 0.0])
 
     scale = 1000.0 if output_in_mm else 1.0
     d = [float(x) * scale for x in d_m]
@@ -623,7 +632,9 @@ def get_robot_tool0_pose(robot_ip=ROBOT_IP, port=30003, output_in_mm=True):
     if q_deg is not None:
         q_rad = [float(np.radians(x)) for x in q_deg]
         T = compute_ur5e_fk(q_rad, output_in_mm=output_in_mm)
-        return T, "UR5 (Real-Time 30003 FK)"
+        import config
+        model = getattr(config, 'ROBOT_MODEL_NAME', 'UR5e' if getattr(config, 'IS_UR5E', False) else 'UR5')
+        return T, f"{model} (Real-Time 30003 FK)"
 
     # 2. Pokušaj s RoboDK digitalnim blizancem
     if ROBODK_ENABLED:
@@ -643,7 +654,8 @@ def get_robot_tool0_pose(robot_ip=ROBOT_IP, port=30003, output_in_mm=True):
     return None, "Nema veze s robotom"
 
 
-def move_robot_to_start(robot_ip=ROBOT_IP, port=PORT, calib_dir="kalibracija_res", log_callback=None):
+def move_robot_to_start(robot_ip=ROBOT_IP, port=PORT, calib_dir="kalibracija_res", log_callback=None,
+                        on_motion_start=None, on_motion_end=None):
     """
     Postavlja robota u početni (home) položaj:
     1. Računa T_base_board i j1_offset (ako kalibracijske datoteke postoje).
@@ -746,12 +758,22 @@ def move_robot_to_start(robot_ip=ROBOT_IP, port=PORT, calib_dir="kalibracija_res
             log(f"[ROBOT] Sending home motion command to robot ({robot_ip}:{port})...")
             success, msg = send_urscript(script, robot_ip=robot_ip, port=port, timeout=2.0)
             if success:
+                if on_motion_start:
+                    try:
+                        on_motion_start()
+                    except Exception:
+                        pass
                 init_delay = wait_for_robot_motion_start(robot_ip=robot_ip, timeout=6.0)
                 log(f"[ROBOT] Robot started home motion (after {init_delay:.2f}s). Duration ~{est_home_time:.1f}s...")
                 if rdk_active and twin is not None:
                     twin.simulate_home_motion_async(q_deg, speed_fraction=speed_fraction)
 
                 time.sleep(est_home_time)
+                if on_motion_end:
+                    try:
+                        on_motion_end()
+                    except Exception:
+                        pass
                 log("[ROBOT] Robot successfully reached start home position.")
                 return True
             else:
@@ -767,8 +789,18 @@ def move_robot_to_start(robot_ip=ROBOT_IP, port=PORT, calib_dir="kalibracija_res
 
                 est_home_time = max(1.5, (max_delta_deg / 28.65) + 0.5)
                 log(f"[ROBOT] Physical robot ({robot_ip}) not connected. Starting smooth home motion in RoboDK (duration ~{est_home_time:.1f}s)...")
+                if on_motion_start:
+                    try:
+                        on_motion_start()
+                    except Exception:
+                        pass
                 twin.simulate_home_motion_async(q_deg, speed_fraction=1.0)
                 time.sleep(est_home_time)
+                if on_motion_end:
+                    try:
+                        on_motion_end()
+                    except Exception:
+                        pass
                 log("[ROBOT] RoboDK robot successfully reached start home position.")
             else:
                 log("[ROBOT] Physical robot not connected and RoboDK not open. Running in virtual mode.")

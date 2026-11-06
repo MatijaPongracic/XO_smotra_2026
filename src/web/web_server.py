@@ -173,6 +173,24 @@ async def serve_controller():
     return JSONResponse({"status": "error", "message": "controller.html not found"}, status_code=404)
 
 
+@fastapi_app.get("/lights")
+@fastapi_app.get("/semafor")
+async def serve_lights():
+    """Namjenski vizualni i zvučni semafor za tablet/mobitel položen uz ploču."""
+    lights_path = os.path.join(TEMPLATES_DIR, "lights.html")
+    if os.path.exists(lights_path):
+        try:
+            with open(lights_path, "r", encoding="utf-8") as f:
+                html = f.read()
+            import re
+            ts = int(time.time())
+            html = re.sub(r'lights\.js(\?v=[^"\'\s>]*)?', f'lights.js?v={ts}', html)
+            return HTMLResponse(content=html, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+        except Exception:
+            return FileResponse(lights_path, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+    return JSONResponse({"status": "error", "message": "lights.html not found"}, status_code=404)
+
+
 @fastapi_app.get("/api/ip")
 async def api_get_ip():
     """Vraća podatke o IP adresi i izravnim URL-ovima za pristup."""
@@ -181,11 +199,13 @@ async def api_get_ip():
     local_ctrl = f"http://{ip}:{port}/controller"
     ctrl_url = f"{_public_tunnel_url}/controller" if _public_tunnel_url else local_ctrl
     sb_url = f"{_public_tunnel_url}/" if _public_tunnel_url else f"http://{ip}:{port}/"
+    lights_url = f"http://{ip}:{port}/lights"
     return {
         "ip": ip,
         "port": port,
         "controller_url": ctrl_url,
         "scoreboard_url": sb_url,
+        "lights_url": lights_url,
         "is_tunnel": bool(_public_tunnel_url),
         "tunnel_url": _public_tunnel_url
     }

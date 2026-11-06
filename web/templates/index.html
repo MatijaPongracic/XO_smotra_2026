@@ -96,7 +96,7 @@
           <div id="robot-avatar" class="player-avatar avatar-o">O</div>
           <div class="player-details">
             <h3>ROBOT <span id="robot-char-label">(O)</span></h3>
-            <p>UR5e System</p>
+            <p id="robot-system-label">UR5 System</p>
           </div>
         </div>
       </section>
@@ -105,8 +105,8 @@
       <div id="multi-move-alert" class="multi-move-alert" style="display: none;">
         <span class="alert-icon">⚠️</span>
         <div class="alert-text">
-          <strong>WARNING: DRAW ONLY 1 MARK!</strong>
-          <span>Multiple new marks detected on the board. Erase the extra mark with an eraser to continue the game.</span>
+          <strong id="multi-move-title">WARNING: DRAW ONLY 1 MARK!</strong>
+          <span id="multi-move-desc">Multiple new marks detected on the board. Erase the extra mark with an eraser to continue the game.</span>
         </div>
       </div>
 
@@ -149,6 +149,15 @@
         <button id="btn-reset-now" class="btn-secondary" style="margin-top: 10px; width: 100%;">
           🔄 New game now
         </button>
+      </div>
+    </div>
+
+    <!-- 5. RECONNECTING OVERLAY -->
+    <div id="reconnect-overlay" class="reconnect-overlay">
+      <div class="reconnect-card">
+        <div class="reconnect-spinner"></div>
+        <div class="reconnect-title">RECONNECTING...</div>
+        <div class="reconnect-subtitle">Lost connection to robot server.<br>Waiting for server to restart...</div>
       </div>
     </div>
   </div>

@@ -33,6 +33,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnResetNow = document.getElementById('btn-reset-now');
   const btnInGameReset = document.getElementById('btn-ingame-reset');
   const btnSoundToggle = document.getElementById('btn-sound-toggle');
+  const reconnectOverlay = document.getElementById('reconnect-overlay');
+
+  // Osiguraj da početni QR kod nikada nije iz starog cachea preglednika
+  const initialQrImage = document.getElementById('qr-image');
+  if (initialQrImage) {
+    initialQrImage.src = '/api/qrcode.png?t=' + Date.now();
+  }
 
   // Stanje aplikacije
   let ws = null;
@@ -41,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let countdownRemaining = 10;
   let isSplashActive = false;
   let lastWarningSoundTime = 0;
+  let wasDisconnected = false;
 
   // Inicijalizacija zvuka
   function updateSoundButton() {
@@ -132,6 +140,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     ws.onopen = () => {
       console.log('[WEBSOCKET] Uspješno povezan na server.');
+      if (wasDisconnected) {
+        // Ako je veza bila prekinuta (aplikacija ponovno upaljena), osvježi stranicu
+        // kako bi se prikazala nova sesija i novo generirani QR kod
+        console.log('[WEBSOCKET] Server ponovno aktivan! Osvježavam sučelje...');
+        window.location.reload();
+        return;
+      }
+      if (reconnectOverlay) {
+        reconnectOverlay.classList.remove('active');
+      }
     };
 
     ws.onmessage = (event) => {
@@ -145,11 +163,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     ws.onclose = () => {
       console.warn('[WEBSOCKET] Veza prekinuta. Ponovno povezivanje za 1.5s...');
+      wasDisconnected = true;
+      if (reconnectOverlay) {
+        reconnectOverlay.classList.add('active');
+      }
       setTimeout(connectWebSocket, 1500);
     };
 
     ws.onerror = () => {
-      ws.close();
+      if (ws) ws.close();
     };
   }
 
@@ -175,7 +197,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Zvučno upozorenje za neregularnost (više novih znakova u istom potezu ILI odigran krivi znak ILI neispravna mreža)
+    // Zvučno upozorenje za neregularnost (više novih znakova u istom potezu ILI odigran krivi znak ILI neispravna mreža ILI zaostali znakovi)
+    const hasPreexisting = Boolean(state.preexisting_marks_detected);
+    const lastHadPreexisting = Boolean(lastState && lastState.preexisting_marks_detected);
     const hasMulti = Boolean(state.multiple_moves_detected);
     const lastHadMulti = Boolean(lastState && lastState.multiple_moves_detected);
     const hasInvalid = Boolean(state.invalid_cells && state.invalid_cells.length > 0);
@@ -183,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const hasGridWarning = Boolean(state.grid_warning);
     const lastHadGridWarning = Boolean(lastState && lastState.grid_warning);
 
-    const isNewWarning = (hasMulti && !lastHadMulti) || (hasInvalid && !lastHadInvalid) || (hasGridWarning && !lastHadGridWarning);
+    const isNewWarning = (hasPreexisting && !lastHadPreexisting) || (hasMulti && !lastHadMulti) || (hasInvalid && !lastHadInvalid) || (hasGridWarning && !lastHadGridWarning);
 
     if (isNewWarning) {
       const now = Date.now();
@@ -248,6 +272,11 @@ document.addEventListener('DOMContentLoaded', () => {
     robotAvatar.className = `player-avatar avatar-${state.robot_char.toLowerCase()}`;
     robotAvatar.textContent = state.robot_char;
 
+    const robotSystemLabel = document.getElementById('robot-system-label');
+    if (robotSystemLabel && state.robot_model) {
+      robotSystemLabel.textContent = `${state.robot_model} System`;
+    }
+
     difficultyBadge.textContent = `DIFFICULTY: ${state.difficulty || 'MEDIUM'}`;
 
     // Ažuriranje rezultata (omjer pobjeda iz game_stats)
@@ -279,6 +308,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (state.multiple_move_cells) {
       state.multiple_move_cells.forEach(item => invalidMap.add(`${item.r}-${item.c}`));
+    }
+    if (state.preexisting_marks_cells) {
+      state.preexisting_marks_cells.forEach(item => invalidMap.add(`${item.r}-${item.c}`));
     }
 
     // Inicijaliziraj 9 ćelija samo jednom
@@ -403,9 +435,27 @@ document.addEventListener('DOMContentLoaded', () => {
       instructionIcon.textContent = '⚠️';
       instructionText.textContent = state.grid_warning;
       instructionText.classList.add('instruction-warning');
-    } else if (state.multiple_moves_detected) {
-      if (multiMoveAlert) multiMoveAlert.style.display = 'flex';
+    } else if (state.preexisting_marks_detected) {
+      if (multiMoveAlert) {
+        multiMoveAlert.style.display = 'flex';
+        const titleEl = document.getElementById('multi-move-title');
+        const descEl = document.getElementById('multi-move-desc');
+        if (titleEl) titleEl.textContent = 'WARNING: PLEASE ERASE ALL MARKS!';
+        if (descEl) descEl.textContent = 'Robot plays first. Pre-existing marks detected inside the grid. Please erase all marks from the board to start.';
+      }
       instructionIcon.textContent = '⚠️';
+      instructionText.textContent = '⚠️ PLEASE ERASE ALL MARKS INSIDE THE GRID!';
+      instructionText.classList.add('instruction-warning');
+    } else if (state.multiple_moves_detected) {
+      if (multiMoveAlert) {
+        multiMoveAlert.style.display = 'flex';
+        const titleEl = document.getElementById('multi-move-title');
+        const descEl = document.getElementById('multi-move-desc');
+        if (titleEl) titleEl.textContent = 'WARNING: DRAW ONLY 1 MARK!';
+        if (descEl) descEl.textContent = 'Multiple new marks detected on the board. Erase the extra mark with an eraser to continue the game.';
+      }
+      instructionIcon.textContent = '⚠️';
+      instructionText.textContent = state.instruction || '⚠️ WARNING: DRAW ONLY 1 MARK!';
       instructionText.classList.add('instruction-warning');
     } else {
       if (multiMoveAlert) multiMoveAlert.style.display = 'none';

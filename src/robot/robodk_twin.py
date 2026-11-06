@@ -176,10 +176,13 @@ class RoboDKTwin:
             except Exception:
                 pass
 
-    def connect_robot_driver(self, robot_ip="192.168.80.128", port=30000):
+    def connect_robot_driver(self, robot_ip=None, port=30000):
         """Pokušava povezati RoboDK driver s fizičkim robotom u pozadini."""
         if not self.is_ready():
             return False
+        if robot_ip is None:
+            import config
+            robot_ip = getattr(config, 'ROBOT_IP', '192.168.40.18')
         try:
             self.robot.setConnectionParams(robot_ip, port, "", "", "")
             # Pokretanje u zasebnoj dretvi da se ne blokira ako robot nije dostupan
@@ -725,7 +728,7 @@ class RoboDKTwin:
 
     # ─── 2. PARALELNA 3D SIMULACIJA (DIGITALNI BLIZANAC) ───────────────────────
 
-    def start_live_sync(self, robot_ip="192.168.80.128", port=30003):
+    def start_live_sync(self, robot_ip=None, port=30003):
         """
         Pokreće sinkronizaciju digitalnog blizanca u realnom vremenu:
         Čita stvarne kutove zglobova s fizičkog robota (port 30003) i odmah
@@ -734,6 +737,10 @@ class RoboDKTwin:
         """
         if not self.is_ready():
             return False
+
+        if robot_ip is None:
+            import config
+            robot_ip = getattr(config, 'ROBOT_IP', '192.168.40.18')
 
         if hasattr(self, '_live_sync') and self._live_sync is not None:
             self._live_sync.stop()
@@ -851,9 +858,12 @@ class LiveRobotSync:
     i preslikava ih na 3D model robota u RoboDK-u.
     Omogućuje savršenu 1:1 sinkronizaciju digitalnog blizanca bez kašnjenja.
     """
-    def __init__(self, robot_item, rdk, robot_ip="192.168.80.128", port=30003):
+    def __init__(self, robot_item, rdk, robot_ip=None, port=30003):
         self.robot = robot_item
         self.rdk = rdk
+        if robot_ip is None:
+            import config
+            robot_ip = getattr(config, 'ROBOT_IP', '192.168.40.18')
         self.robot_ip = robot_ip
         self.port = port
         self.running = False

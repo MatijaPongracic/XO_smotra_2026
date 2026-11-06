@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>XO Robot — Safety Signal Light</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #070a14;
+      --housing-bg: #111625;
+      --housing-border: rgba(255, 255, 255, 0.12);
+      --red-lit: #ef4444;
+      --red-glow: rgba(239, 68, 68, 0.75);
+      --red-dim: #261114;
+      --green-lit: #10b981;
+      --green-glow: rgba(16, 185, 129, 0.75);
+      --green-dim: #0d241c;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg-dark);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: var(--text-main);
+    }
+
+    /* Dynamic ambient table aura that reflects the active state */
+    .ambient-glow {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      transition: background 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease;
+      opacity: 0;
+      z-index: 1;
+    }
+
+    .ambient-glow.red-aura {
+      background: radial-gradient(circle at center, rgba(239, 68, 68, 0.35) 0%, rgba(239, 68, 68, 0.08) 55%, transparent 75%);
+      opacity: 1;
+    }
+
+    .ambient-glow.green-aura {
+      background: radial-gradient(circle at center, rgba(16, 185, 129, 0.35) 0%, rgba(16, 185, 129, 0.08) 55%, transparent 75%);
+      opacity: 1;
+    }
+
+    .ambient-glow.alarm-aura {
+      background: radial-gradient(circle at center, rgba(239, 68, 68, 0.6) 0%, rgba(239, 68, 68, 0.2) 60%, transparent 80%);
+      opacity: 1;
+      animation: pulseAlarmAura 0.3s infinite alternate;
+    }
+
+    @keyframes pulseAlarmAura {
+      from { opacity: 0.5; }
+      to { opacity: 1; }
+    }
+
+    /* Main Container */
+    .app-viewport {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: clamp(12px, 3vh, 24px);
+    }
+
+    /* Top Navigation / Status Header */
+    .top-header {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 4px 8px;
+    }
+
+    .brand-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.06);
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+    }
+
+    .conn-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ef4444;
+      box-shadow: 0 0 8px #ef4444;
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+
+    .conn-dot.online {
+      background: #10b981;
+      box-shadow: 0 0 10px #10b981;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .icon-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, transform 0.1s;
+      backdrop-filter: blur(10px);
+    }
+
+    .icon-btn:active {
+      transform: scale(0.94);
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    /* Central Content Area */
+    .signal-stage {
+      flex: 1;
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(16px, 3vh, 32px);
+    }
+
+    /* Physical-style Traffic Light Housing */
+    .traffic-housing {
+      background: linear-gradient(145deg, #182033, #0d1220);
+      border: 3px solid var(--housing-border);
+      border-radius: clamp(32px, 8vw, 48px);
+      box-shadow: 
+        0 20px 50px rgba(0, 0, 0, 0.8),
+        inset 0 2px 4px rgba(255, 255, 255, 0.15),
+        inset 0 -3px 6px rgba(0, 0, 0, 0.6);
+      padding: clamp(16px, 3vw, 24px);
+      display: flex;
+      flex-direction: column;
+      gap: clamp(16px, 3.5vw, 28px);
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    /* In landscape mode, the lights can flow side-by-side or stay vertical */
+    @media (orientation: landscape) and (max-height: 520px) {
+      .traffic-housing {
+        flex-direction: row;
+        padding: 14px 22px;
+      }
+    }
+
+    /* Traffic Light Lenses */
+    .light-lens {
+      width: clamp(110px, 24vw, 190px);
+      height: clamp(110px, 24vw, 190px);
+      border-radius: 50%;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      box-sizing: border-box;
+    }
+
+    /* Visor / Bezel Ring around each lens */
+    .light-lens::before {
+      content: '';
+      position: absolute;
+      inset: -10px;
+      border-radius: 50%;
+      border: 3px solid rgba(0, 0, 0, 0.7);
+      background: radial-gradient(circle, transparent 65%, rgba(0, 0, 0, 0.4) 100%);
+      pointer-events: none;
+      box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.08);
+    }
+
+    /* Glass Reflection Highlight */
+    .light-lens::after {
+      content: '';
+      position: absolute;
+      top: 8%;
+      left: 18%;
+      width: 64%;
+      height: 38%;
+      border-radius: 50%;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 100%);
+      pointer-events: none;
+    }
+
+    /* RED LIGHT - OFF */
+    .light-lens.red-light {
+      background: radial-gradient(circle at 35% 35%, #42161b 0%, var(--red-dim) 65%, #15080a 100%);
+      border: 3px solid rgba(239, 68, 68, 0.2);
+      box-shadow: inset 0 8px 16px rgba(0, 0, 0, 0.8);
+      color: rgba(239, 68, 68, 0.25);
+    }
+
+    /* RED LIGHT - LIT */
+    .light-lens.red-light.lit {
+      background: radial-gradient(circle at 45% 45%, #ffffff 0%, #fca5a5 15%, var(--red-lit) 55%, #b91c1c 100%);
+      border: 3px solid #fecaca;
+      box-shadow: 
+        0 0 45px var(--red-glow),
+        0 0 110px rgba(239, 68, 68, 0.85),
+        inset 0 0 30px #ffffff;
+      color: #ffffff;
+      animation: pulseRedGlow 1.8s infinite ease-in-out;
+    }
+
+    @keyframes pulseRedGlow {
+      0%, 100% {
+        box-shadow: 0 0 40px var(--red-glow), 0 0 100px rgba(239, 68, 68, 0.75), inset 0 0 25px #ffffff;
+      }
+      50% {
+        box-shadow: 0 0 60px var(--red-glow), 0 0 140px rgba(239, 68, 68, 0.95), inset 0 0 35px #ffffff;
+      }
+    }
+
+    /* GREEN LIGHT - OFF */
+    .light-lens.green-light {
+      background: radial-gradient(circle at 35% 35%, #123d2e 0%, var(--green-dim) 65%, #071510 100%);
+      border: 3px solid rgba(16, 185, 129, 0.2);
+      box-shadow: inset 0 8px 16px rgba(0, 0, 0, 0.8);
+      color: rgba(16, 185, 129, 0.25);
+    }
+
+    /* GREEN LIGHT - LIT */
+    .light-lens.green-light.lit {
+      background: radial-gradient(circle at 45% 45%, #ffffff 0%, #a7f3d0 15%, var(--green-lit) 55%, #047857 100%);
+      border: 3px solid #d1fae5;
+      box-shadow: 
+        0 0 45px var(--green-glow),
+        0 0 110px rgba(16, 185, 129, 0.85),
+        inset 0 0 30px #ffffff;
+      color: #ffffff;
+      animation: pulseGreenGlow 1.8s infinite ease-in-out;
+    }
+
+    @keyframes pulseGreenGlow {
+      0%, 100% {
+        box-shadow: 0 0 40px var(--green-glow), 0 0 100px rgba(16, 185, 129, 0.75), inset 0 0 25px #ffffff;
+      }
+      50% {
+        box-shadow: 0 0 60px var(--green-glow), 0 0 140px rgba(16, 185, 129, 0.95), inset 0 0 35px #ffffff;
+      }
+    }
+
+    /* Flashing Safety Alarm on Red Lens */
+    .light-lens.red-light.alarm-flash {
+      animation: alarmFlashLens 0.22s infinite alternate !important;
+    }
+
+    @keyframes alarmFlashLens {
+      0% {
+        background: radial-gradient(circle at 45% 45%, #ffffff 0%, #fca5a5 15%, var(--red-lit) 55%, #b91c1c 100%);
+        box-shadow: 0 0 80px #ef4444, 0 0 160px #ef4444, inset 0 0 40px #ffffff;
+      }
+      100% {
+        background: #261114;
+        box-shadow: none;
+      }
+    }
+
+    /* Lens Inner Icon */
+    .lens-icon {
+      font-size: clamp(36px, 8vw, 68px);
+      z-index: 2;
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6));
+      transition: transform 0.3s;
+    }
+
+    .light-lens.lit .lens-icon {
+      transform: scale(1.08);
+    }
+
+    /* Status Instruction Card */
+    .instruction-card {
+      width: 100%;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      min-height: 85px;
+    }
+
+    .instruction-main {
+      font-size: clamp(26px, 5.5vw, 46px);
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      transition: color 0.3s, text-shadow 0.3s;
+    }
+
+    .instruction-sub {
+      font-size: clamp(14px, 2.8vw, 19px);
+      font-weight: 600;
+      color: var(--text-muted);
+      max-width: 650px;
+      line-height: 1.4;
+    }
+
+    /* Dynamic text colors matching state */
+    .instruction-card.state-red .instruction-main {
+      color: #f87171;
+      text-shadow: 0 0 25px rgba(239, 68, 68, 0.85);
+    }
+
+    .instruction-card.state-green .instruction-main {
+      color: #34d399;
+      text-shadow: 0 0 25px rgba(16, 185, 129, 0.85);
+    }
+
+    .instruction-card.state-off .instruction-main {
+      color: #64748b;
+      text-shadow: none;
+    }
+
+    .instruction-card.state-alarm .instruction-main {
+      color: #ffffff;
+      background: #dc2626;
+      padding: 4px 16px;
+      border-radius: 12px;
+      animation: pulseAlarmCard 0.25s infinite alternate;
+      box-shadow: 0 0 30px #ef4444;
+    }
+
+    @keyframes pulseAlarmCard {
+      from { transform: scale(1); }
+      to { transform: scale(1.04); }
+    }
+
+    /* Bottom Info Bar */
+    .bottom-bar {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 8px;
+    }
+
+    .status-badge.badge-red {
+      background: rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .status-badge.badge-green {
+      background: rgba(16, 185, 129, 0.2);
+      color: #a7f3d0;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .status-badge.badge-off {
+      background: rgba(148, 163, 184, 0.15);
+      color: #94a3b8;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    /* Initial Activation Overlay (Required for Audio on Mobile Browsers) */
+    .start-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 8, 18, 0.92);
+      backdrop-filter: blur(20px);
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: opacity 0.4s ease, visibility 0.4s;
+    }
+
+    .start-overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .start-card {
+      background: linear-gradient(145deg, #182238, #0e1626);
+      border: 2px solid rgba(56, 189, 248, 0.4);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(56, 189, 248, 0.25);
+      border-radius: 28px;
+      padding: clamp(24px, 5vw, 42px);
+      max-width: 460px;
+      width: 90%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      animation: floatStartCard 3s infinite ease-in-out;
+    }
+
+    @keyframes floatStartCard {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    .start-icon {
+      font-size: 56px;
+      filter: drop-shadow(0 0 15px rgba(56, 189, 248, 0.6));
+    }
+
+    .start-title {
+      font-size: clamp(20px, 4vw, 26px);
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      color: #ffffff;
+    }
+
+    .start-desc {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .start-btn {
+      margin-top: 8px;
+      background: linear-gradient(135deg, #38bdf8, #2563eb);
+      color: #ffffff;
+      border: none;
+      padding: 14px 32px;
+      border-radius: 16px;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      box-shadow: 0 8px 25px rgba(37, 99, 235, 0.5);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Ambient table aura -->
+  <div id="ambient-glow" class="ambient-glow"></div>
+
+  <!-- Main Viewport -->
+  <main class="app-viewport">
+    <!-- Header -->
+    <header class="top-header">
+      <div class="brand-pill">
+        <span id="conn-dot" class="conn-dot"></span>
+        <span id="conn-text">XO SIGNAL</span>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-sound-toggle" class="icon-btn" title="Toggle Sound">🔊</button>
+        <button id="btn-fullscreen-toggle" class="icon-btn" title="Toggle Fullscreen">⛶</button>
+      </div>
+    </header>
+
+    <!-- Signal Stage (Traffic Housing & Instructions) -->
+    <section class="signal-stage">
+      <!-- Physical Traffic Light -->
+      <div class="traffic-housing">
+        <!-- RED LIGHT (TOP) -->
+        <div id="light-red" class="light-lens red-light">
+          <span class="lens-icon">✋</span>
+        </div>
+
+        <!-- GREEN LIGHT (BOTTOM) -->
+        <div id="light-green" class="light-lens green-light">
+          <span class="lens-icon">✍️</span>
+        </div>
+      </div>
+
+      <!-- Instruction Status Banner -->
+      <div id="instruction-card" class="instruction-card state-off">
+        <h1 id="instruction-main" class="instruction-main">STANDBY</h1>
+        <p id="instruction-sub" class="instruction-sub">Waiting for game to start...</p>
+      </div>
+    </section>
+
+    <!-- Bottom Info Bar -->
+    <footer class="bottom-bar">
+      <div>
+        <span>Turn: </span>
+        <span id="badge-turn" class="status-badge badge-off">—</span>
+      </div>
+      <div>
+        <span>Robot: </span>
+        <span id="badge-motion" class="status-badge badge-off">IDLE</span>
+      </div>
+    </footer>
+  </main>
+
+  <!-- Initial Tap to Activate Overlay (Unmutes Web Audio & Requests Wake Lock) -->
+  <div id="start-overlay" class="start-overlay">
+    <div class="start-card">
+      <div class="start-icon">🚦</div>
+      <h2 class="start-title">TAP TO ACTIVATE SIGNAL</h2>
+      <p class="start-desc">
+        Enables safety audio alerts and keeps the screen on while placed beside the board.
+      </p>
+      <button class="start-btn">
+        <span>⚡</span> Start Signal
+      </button>
+    </div>
+  </div>
+
+  <script src="/static/js/lights.js?v=20261106_1"></script>
+</body>
+</html>
+

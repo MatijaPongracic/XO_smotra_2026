@@ -244,6 +244,11 @@ document.addEventListener('DOMContentLoaded', () => {
           liveInstruction.style.background = 'rgba(239, 68, 68, 0.35)';
           liveInstruction.style.color = '#f87171';
           liveInstruction.style.border = '2px solid #ef4444';
+        } else if (state.preexisting_marks_detected) {
+          liveInstruction.innerHTML = '⚠️ ERASE ALL MARKS INSIDE THE GRID!<br><span style="font-size:12px;font-weight:600;color:#fca5a5;">Robot plays first. Please erase all marks from the board to start.</span>';
+          liveInstruction.style.background = 'rgba(239, 68, 68, 0.35)';
+          liveInstruction.style.color = '#f87171';
+          liveInstruction.style.border = '2px solid #ef4444';
         } else if (state.multiple_moves_detected) {
           liveInstruction.innerHTML = '⚠️ DRAW ONLY 1 MARK!<br><span style="font-size:12px;font-weight:600;color:#fca5a5;">Multiple new marks detected on the board. Erase extra marks to continue!</span>';
           liveInstruction.style.background = 'rgba(239, 68, 68, 0.35)';
@@ -261,7 +266,10 @@ document.addEventListener('DOMContentLoaded', () => {
           liveInstruction.style.border = 'none';
         }
 
-        if (state.current_turn === 'PLAYER') {
+        if (state.preexisting_marks_detected) {
+          liveTurnBadge.textContent = '🤖 ROBOT\'S TURN (WAITING FOR CLEAR BOARD)';
+          liveTurnBadge.style.color = '#ef4444';
+        } else if (state.current_turn === 'PLAYER') {
           liveTurnBadge.textContent = `🎯 CURRENT TURN: PLAYER (${state.player_char})`;
           liveTurnBadge.style.color = 'var(--color-x)';
         } else {
@@ -292,6 +300,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (state.multiple_move_cells) {
       state.multiple_move_cells.forEach(item => invalidCells.add(`${item.r}-${item.c}`));
+    }
+    if (state.preexisting_marks_cells) {
+      state.preexisting_marks_cells.forEach(item => invalidCells.add(`${item.r}-${item.c}`));
     }
 
     for (let r = 0; r < 3; r++) {

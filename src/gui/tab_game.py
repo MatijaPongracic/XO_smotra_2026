@@ -131,6 +131,13 @@ class TabGame(tk.Frame):
         self.multiple_moves_hand_interacted = False
         self.player_turn_baseline_ink = {}
 
+        # Detekcija zaostalih/prijevremenih znakova na mreži kada robot igra prvi
+        self.preexisting_marks_warning = False
+        self.preexisting_marks_cells = {}
+        self.clean_grid_frames_count = 0
+        self.preexisting_detect_frame_count = 0
+        self.robot_motion_hand_frames = 0
+
         # Detekcija šake
         self.hand_detected = False
         self.hand_frames_clear = 0
@@ -598,6 +605,12 @@ class TabGame(tk.Frame):
                     if rot and rot[0] not in rotated_invalid:
                         rotated_invalid[rot[0]] = 'EXTRA'
 
+            if getattr(self, 'preexisting_marks_warning', False) and not (self.canvas_frozen_by_hand or self.hand_detected):
+                for (r, c) in getattr(self, 'preexisting_marks_cells', {}).keys():
+                    rot = rotate_coords([(r, c)], rot_angle)
+                    if rot and rot[0] not in rotated_invalid:
+                        rotated_invalid[rot[0]] = 'ERASE'
+
             gt = getattr(self.app, 'grid_tracker', None)
             grid_warn = getattr(gt, 'grid_constraint_warning', None) if gt else None
 
@@ -936,6 +949,11 @@ class TabGame(tk.Frame):
         self.multiple_moves_frame_count = 0
         self.multiple_moves_clear_count = 0
         self.multiple_moves_hand_interacted = False
+        self.preexisting_marks_warning = False
+        self.preexisting_marks_cells.clear()
+        self.clean_grid_frames_count = 0
+        self.preexisting_detect_frame_count = 0
+        self.robot_motion_hand_frames = 0
         self.player_turn_baseline_ink = {}
         self.forced_cell_states.clear()
         self.hand_detected = False
@@ -1107,6 +1125,11 @@ class TabGame(tk.Frame):
         self.multiple_moves_frame_count = 0
         self.multiple_moves_clear_count = 0
         self.multiple_moves_hand_interacted = False
+        self.preexisting_marks_warning = False
+        self.preexisting_marks_cells.clear()
+        self.clean_grid_frames_count = 0
+        self.preexisting_detect_frame_count = 0
+        self.robot_motion_hand_frames = 0
         self.player_turn_baseline_ink = {}
         self.forced_cell_states.clear()
         self.pending_force_symbol = None
@@ -1140,7 +1163,21 @@ class TabGame(tk.Frame):
                     time.sleep(0.1)
                 if not self.game_active:
                     return
-            connect_robot.move_robot_to_start(log_callback=self.app.status_log_add)
+
+            def on_motion_start():
+                self.robot_turn_in_progress = True
+
+            def on_motion_end():
+                self.robot_turn_in_progress = False
+
+            try:
+                connect_robot.move_robot_to_start(
+                    log_callback=self.app.status_log_add,
+                    on_motion_start=on_motion_start,
+                    on_motion_end=on_motion_end
+                )
+            finally:
+                self.robot_turn_in_progress = False
 
         threading.Thread(target=run_start_home, daemon=True).start()
 
@@ -1180,6 +1217,11 @@ class TabGame(tk.Frame):
         self.multiple_moves_frame_count = 0
         self.multiple_moves_clear_count = 0
         self.multiple_moves_hand_interacted = False
+        self.preexisting_marks_warning = False
+        self.preexisting_marks_cells.clear()
+        self.clean_grid_frames_count = 0
+        self.preexisting_detect_frame_count = 0
+        self.robot_motion_hand_frames = 0
         self.player_turn_baseline_ink = {}
         self.forced_cell_states.clear()
         self.hand_detected = False
@@ -1304,6 +1346,10 @@ class TabGame(tk.Frame):
             not hand_is_over and 
             not is_resolving_multi
         )
+        preexisting_active = bool(
+            getattr(self, 'preexisting_marks_warning', False) and 
+            not hand_is_over
+        )
 
         active_invalid_cells = {}
         for (r, c), sym in getattr(self, 'invalid_move_cells', {}).items():
@@ -1328,6 +1374,8 @@ class TabGame(tk.Frame):
                 instruction = "ROBOT IS DRAWING THE GRID..."
             else:
                 instruction = "ROBOT IS DRAWING..."
+        elif preexisting_active:
+            instruction = "⚠️ PLEASE ERASE ALL MARKS INSIDE THE GRID!"
         elif multi_moves_active:
             instruction = "⚠️ WARNING: DRAW ONLY 1 MARK!"
         elif not grid_locked:
@@ -1349,12 +1397,25 @@ class TabGame(tk.Frame):
             if rc_rot:
                 invalid_list.append({'r': rc_rot[0][0], 'c': rc_rot[0][1], 'symbol': sym})
 
+        if preexisting_active:
+            for (r, c), sym in getattr(self, 'preexisting_marks_cells', {}).items():
+                rc_rot = rotate_coords([(r, c)], rot_angle)
+                if rc_rot and not any(item['r'] == rc_rot[0][0] and item['c'] == rc_rot[0][1] for item in invalid_list):
+                    invalid_list.append({'r': rc_rot[0][0], 'c': rc_rot[0][1], 'symbol': sym})
+
         rotated_multi_cells = []
         if multi_moves_active:
             for (r, c) in getattr(self, 'multiple_move_cells', []):
                 rc_rot = rotate_coords([(r, c)], rot_angle)
                 if rc_rot:
                     rotated_multi_cells.append({'r': rc_rot[0][0], 'c': rc_rot[0][1]})
+
+        rotated_preexisting_cells = []
+        if preexisting_active:
+            for (r, c) in getattr(self, 'preexisting_marks_cells', {}).keys():
+                rc_rot = rotate_coords([(r, c)], rot_angle)
+                if rc_rot:
+                    rotated_preexisting_cells.append({'r': rc_rot[0][0], 'c': rc_rot[0][1]})
 
         # Učitavanje statistike
         stats_data = {}
@@ -1370,10 +1431,14 @@ class TabGame(tk.Frame):
             'multiple_moves_detected': multi_moves_active,
             'multiple_moves_warning': "WARNING: DRAW ONLY 1 MARK!",
             'multiple_move_cells': rotated_multi_cells,
+            'preexisting_marks_detected': preexisting_active,
+            'preexisting_marks_warning': "WARNING: PLEASE ERASE ALL MARKS!",
+            'preexisting_marks_cells': rotated_preexisting_cells,
             'game_winner': self.game_winner,
             'winning_line': rotated_win_line,
             'player_char': self.player_char,
             'robot_char': self.robot_char,
+            'robot_model': getattr(config, 'ROBOT_MODEL_NAME', 'UR5e' if getattr(config, 'IS_UR5E', False) else 'UR5'),
             'difficulty': getattr(self, 'difficulty', 'MEDIUM'),
             'effective_first_move': self.effective_first_move,
             'grid_drawer': drawer,
@@ -1382,6 +1447,7 @@ class TabGame(tk.Frame):
             'grid_constraint_error': getattr(gt, 'grid_constraint_error_type', None) if gt else None,
             'robot_turn_in_progress': bool(self.robot_turn_in_progress),
             'hand_detected': bool(self.canvas_frozen_by_hand or self.hand_detected),
+            'hand_hazard': bool(getattr(self, 'robot_motion_hand_frames', 0) >= 2),
             'current_turn': turn,
             'board': rotated_board,
             'invalid_cells': invalid_list,
@@ -1412,6 +1478,10 @@ class TabGame(tk.Frame):
         self.multiple_moves_frame_count = 0
         self.multiple_moves_clear_count = 0
         self.multiple_moves_hand_interacted = False
+        self.preexisting_marks_warning = False
+        self.preexisting_marks_cells.clear()
+        self.clean_grid_frames_count = 0
+        self.preexisting_detect_frame_count = 0
 
         if winner_char == self.player_char:
             self.game_winner = 'PLAYER'
@@ -1605,7 +1675,7 @@ class TabGame(tk.Frame):
 
     def handle_robot_move(self, best_move):
         """Izvodi robotov potez: fizičko crtanje simbola i ažuriranje digitalnog kanvasa."""
-        if self.robot_turn_in_progress:
+        if self.robot_turn_in_progress or getattr(self, 'preexisting_marks_warning', False):
             return
 
         self.robot_turn_in_progress = True
@@ -2129,6 +2199,14 @@ class TabGame(tk.Frame):
         self.missing_marker_frames = 0
 
         # Obrada šake
+        if self.robot_turn_in_progress:
+            if hand_detected:
+                self.robot_motion_hand_frames = getattr(self, 'robot_motion_hand_frames', 0) + 1
+            else:
+                self.robot_motion_hand_frames = 0
+        else:
+            self.robot_motion_hand_frames = 0
+
         if hand_detected:
             self.hand_detected = True
             self.hand_frames_clear = 0
@@ -2208,6 +2286,56 @@ class TabGame(tk.Frame):
                                 )
                         else:
                             self.invalid_move_clear_frames[err_key] = 0
+
+                    # ── PROVJERA ZAOSTALIH/PRIJEVREMENIH ZNAKOVA KADA ROBOT IGRA PRVI ──
+                    is_player_grid = (self.opt_grid_drawers[self.opt_grid_drawer_idx] == 'PLAYER')
+                    is_robot_first = (self.effective_first_move == 'ROBOT')
+                    is_initial_robot_turn = (
+                        sum(row.count(self.robot_char) for row in self.current_game_state) == 0 and 
+                        len(self.robot_moves) == 0
+                    )
+                    cfg_stability_frames = int(getattr(config, 'SYMBOL_STABILITY_FRAMES', SYMBOL_STABILITY_FRAMES))
+
+                    if is_player_grid and is_robot_first and is_initial_robot_turn:
+                        detected_preexisting = {}
+                        if hasattr(gt, 'latest_raw_symbols') and gt.latest_raw_symbols:
+                            for k, sym in gt.latest_raw_symbols.items():
+                                detected_preexisting[k] = sym
+                        if hasattr(gt, 'symbol_candidates') and gt.symbol_candidates:
+                            for k, cand in gt.symbol_candidates.items():
+                                if cand.get('frames', 0) >= 1:
+                                    detected_preexisting[k] = cand.get('symbol', 'MARK')
+                        for k, sym in stable_symbols.items():
+                            detected_preexisting[k] = sym
+
+                        if not self.canvas_frozen_by_hand and not self.hand_detected:
+                            if detected_preexisting:
+                                self.clean_grid_frames_count = 0
+                                self.preexisting_detect_frame_count = getattr(self, 'preexisting_detect_frame_count', 0) + 1
+                                if self.preexisting_detect_frame_count >= 2 or any(k in stable_symbols for k in detected_preexisting):
+                                    self.preexisting_marks_cells = detected_preexisting
+                                    if not self.preexisting_marks_warning:
+                                        self.preexisting_marks_warning = True
+                                        self.app.status_log_add(
+                                            f"[IRREGULARITY] Marks detected inside grid on cells {sorted(list(detected_preexisting.keys()))} "
+                                            f"before robot's first move! Robot plays first on an empty board. "
+                                            f"Please erase all marks from the grid to continue."
+                                        )
+                            else:
+                                self.preexisting_detect_frame_count = 0
+                                self.clean_grid_frames_count = getattr(self, 'clean_grid_frames_count', 0) + 1
+                                if self.clean_grid_frames_count >= cfg_stability_frames:
+                                    if self.preexisting_marks_warning:
+                                        self.preexisting_marks_warning = False
+                                        self.preexisting_marks_cells.clear()
+                                        for ec in [(r, c) for r in range(3) for c in range(3)]:
+                                            gt.symbol_candidates.pop(ec, None)
+                                        self.app.status_log_add(
+                                            f"[INFO] All marks erased! Board is clean and verified for {cfg_stability_frames} frames. "
+                                            f"Robot is now computing its first move."
+                                        )
+                        else:
+                            self.clean_grid_frames_count = 0
 
                     # ── DETEKCIJA NEREGULARNOSTI: VIŠE NOVIH ZNAKOVA U ISTOM POTEZU ──
                     empty_cells = [(r, c) for r in range(3) for c in range(3) if self.current_game_state[r][c] == '']
@@ -2356,6 +2484,8 @@ class TabGame(tk.Frame):
                                         pass
                                     elif move_committed_this_frame:
                                         pass
+                                    elif getattr(self, 'preexisting_marks_warning', False) or (is_player_grid and is_robot_first and is_initial_robot_turn):
+                                        pass
                                     else:
                                         det_sym = stable_symbols[(r, c)]
                                         if det_sym == self.player_char:
@@ -2399,25 +2529,29 @@ class TabGame(tk.Frame):
                     winner, win_line = check_tic_tac_toe_winner(self.current_game_state)
                     if winner is not None:
                         self._handle_game_over(winner, win_line)
-                    elif not self.invalid_move_cells and not self.multiple_moves_detected and not self.robot_turn_in_progress:
+                    elif not self.invalid_move_cells and not self.multiple_moves_detected and not getattr(self, 'preexisting_marks_warning', False) and not self.robot_turn_in_progress:
                         last_failed = getattr(self, 'last_robot_move_failed_time', 0.0)
                         if time.time() - last_failed >= 2.5:
-                            count_player = sum(row.count(self.player_char) for row in self.current_game_state)
-                            count_robot = sum(row.count(self.robot_char) for row in self.current_game_state)
-
-                            if self.effective_first_move == 'PLAYER':
-                                is_robot_turn = (count_player == count_robot + 1)
+                            cfg_stab = int(getattr(config, 'SYMBOL_STABILITY_FRAMES', SYMBOL_STABILITY_FRAMES))
+                            if is_player_grid and is_robot_first and is_initial_robot_turn and getattr(self, 'clean_grid_frames_count', 0) < cfg_stab:
+                                pass
                             else:
-                                is_robot_turn = (count_player == count_robot)
+                                count_player = sum(row.count(self.player_char) for row in self.current_game_state)
+                                count_robot = sum(row.count(self.robot_char) for row in self.current_game_state)
 
-                            if is_robot_turn:
-                                best_move = minimax.find_best_move(
-                                    self.current_game_state,
-                                    agent=self.robot_char,
-                                    difficulty=getattr(self, 'difficulty', 'HARD')
-                                )
-                                if best_move is not None:
-                                    self.handle_robot_move(best_move)
+                                if self.effective_first_move == 'PLAYER':
+                                    is_robot_turn = (count_player == count_robot + 1)
+                                else:
+                                    is_robot_turn = (count_player == count_robot)
+
+                                if is_robot_turn:
+                                    best_move = minimax.find_best_move(
+                                        self.current_game_state,
+                                        agent=self.robot_char,
+                                        difficulty=getattr(self, 'difficulty', 'HARD')
+                                    )
+                                    if best_move is not None:
+                                        self.handle_robot_move(best_move)
 
                 except Exception:
                     pass
@@ -2498,6 +2632,14 @@ class TabGame(tk.Frame):
                     self.lbl_sub_instruction.configure(
                         text=f"Hand removed — waiting for stabilization ({self.hand_frames_clear}/{HAND_STABILIZE_FRAMES} frames)..."
                     )
+            elif getattr(self, 'preexisting_marks_warning', False):
+                cells_str = ", ".join(f"({r},{c})" for r, c in sorted(self.preexisting_marks_cells.keys())) if self.preexisting_marks_cells else ""
+                cells_text = f"on cells: {cells_str}" if cells_str else "inside the grid"
+                self.lbl_main_instruction.configure(text="⚠️ PLEASE ERASE ALL MARKS!", fg="#ef4444")
+                self.lbl_sub_instruction.configure(
+                    text=f"Robot plays first. Detected pre-existing marks {cells_text}!\n\n"
+                         f"Please erase all marks from the board with an eraser so the robot can start on an empty grid."
+                )
             elif self.multiple_moves_detected:
                 cells_str = ", ".join(f"({r},{c})" for r, c in self.multiple_move_cells)
                 self.lbl_main_instruction.configure(text="⚠️ INVALID: DRAW ONLY 1 MARK!", fg="#ef4444")
@@ -2553,12 +2695,24 @@ class TabGame(tk.Frame):
                         sub_text = f"Player's ({self.player_char}) turn. Make your move on the board. (Moves: {total_moves})"
                     self.lbl_sub_instruction.configure(text=sub_text)
                 else:
+                    is_player_grid = (self.opt_grid_drawers[self.opt_grid_drawer_idx] == 'PLAYER')
+                    is_robot_first = (self.effective_first_move == 'ROBOT')
+                    is_initial_robot_turn = (count_robot == 0 and len(self.robot_moves) == 0 and count_player == 0)
+                    cfg_stab = int(getattr(config, 'SYMBOL_STABILITY_FRAMES', SYMBOL_STABILITY_FRAMES))
+
                     if self.robot_turn_in_progress:
                         self.lbl_main_instruction.configure(
                             text=f"🤖 ROBOT IS DRAWING ({self.robot_char})", fg="#f59e0b"
                         )
                         self.lbl_sub_instruction.configure(
                             text=f"Robot is physically drawing '{self.robot_char}' on the board... (Moves: {total_moves})"
+                        )
+                    elif is_player_grid and is_robot_first and is_initial_robot_turn and getattr(self, 'clean_grid_frames_count', 0) < cfg_stab:
+                        self.lbl_main_instruction.configure(
+                            text=f"🤖 ROBOT'S TURN ({self.robot_char})", fg="#f59e0b"
+                        )
+                        self.lbl_sub_instruction.configure(
+                            text=f"Inspecting empty grid ({self.clean_grid_frames_count}/{cfg_stab} frames)..."
                         )
                     else:
                         self.lbl_main_instruction.configure(

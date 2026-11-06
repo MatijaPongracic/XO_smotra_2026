@@ -155,8 +155,8 @@ def draw_digital_canvas(state, target_w, target_h, winning_line=None, invalid_ce
                 txt_thick = max(1, int(min(w_third, h_third) / 220.0))
 
                 sym_str = str(wrong_sym).strip()
-                if sym_str.upper() in ['MULTI', 'EXTRA', '⚠️'] or len(sym_str) > 1 or '?' in sym_str:
-                    txt1 = "EXTRA MOVE"
+                if sym_str.upper() in ['MULTI', 'EXTRA', '⚠️', 'ERASE', 'PREEXISTING'] or len(sym_str) > 1 or '?' in sym_str:
+                    txt1 = "ERASE MARK" if sym_str.upper() in ['ERASE', 'PREEXISTING'] else "EXTRA MOVE"
                     txt2 = "ERASE!"
                 else:
                     txt1 = f"WRONG: {sym_str}"

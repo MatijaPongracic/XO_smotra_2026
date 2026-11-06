@@ -796,6 +796,74 @@ body::before {
 }
 
 /* ==============================================================================
+   RECONNECTING OVERLAY (SERVER DISCONNECT / RESTART)
+   ============================================================================== */
+.reconnect-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(7, 9, 14, 0.94);
+  backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.reconnect-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.reconnect-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 28px;
+  padding: 40px 48px;
+  text-align: center;
+  max-width: 520px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(56, 189, 248, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.reconnect-spinner {
+  width: 54px;
+  height: 54px;
+  border: 4px solid rgba(255, 255, 255, 0.12);
+  border-top-color: var(--color-x);
+  border-radius: 50%;
+  animation: reconnectSpin 1s linear infinite;
+}
+
+@keyframes reconnectSpin {
+  to { transform: rotate(360deg); }
+}
+
+.reconnect-title {
+  font-size: clamp(26px, 4vw, 36px);
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+}
+
+.reconnect-subtitle {
+  font-size: clamp(14px, 1.8vh, 18px);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* ==============================================================================
    MOBILNI KONTROLER SPECIFIČNI STILOVI
    ============================================================================== */
 .controller-body {

@@ -185,7 +185,7 @@ class TabEyeToHand(tk.Frame):
 
         # Banner upozorenja ako fizički robot nije spojen
         import config
-        robot_ip_str = getattr(config, 'ROBOT_IP', '192.168.40.14')
+        robot_ip_str = getattr(config, 'ROBOT_IP', '192.168.40.18')
         self.lbl_robot_warning_banner = tk.Label(
             card1,
             text=f"⚠️ PHYSICAL ROBOT ({robot_ip_str}) NOT CONNECTED!\n"
@@ -1005,7 +1005,7 @@ class TabEyeToHand(tk.Frame):
         def _check():
             try:
                 import config
-                robot_ip = getattr(config, 'ROBOT_IP', '192.168.40.14')
+                robot_ip = getattr(config, 'ROBOT_IP', '192.168.40.18')
                 is_online = connect_robot.is_robot_connected(robot_ip=robot_ip, port=30003, timeout=0.35)
             except Exception:
                 is_online = False
@@ -1026,6 +1026,10 @@ class TabEyeToHand(tk.Frame):
                 else:
                     self.lbl_robot_status.configure(
                         text=f"🔴 ROBOT NOT CONNECTED: {robot_ip}", fg="#ef4444"
+                    )
+                    self.lbl_robot_warning_banner.configure(
+                        text=f"⚠️ PHYSICAL ROBOT ({robot_ip}) NOT CONNECTED!\n"
+                             f"Capture disabled to prevent fake poses."
                     )
                     self.lbl_robot_warning_banner.pack(fill=tk.X, pady=(0, 8), before=self.btn_capture)
                     self.btn_capture.configure(

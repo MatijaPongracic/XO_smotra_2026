@@ -182,10 +182,18 @@ THEME_TEXT_DANGER = "#ef4444"
 # ==============================================================================
 # 9. PARAMETRI ROBOTA I POČETNI (HOME) POLOŽAJ (connect_robot.py)
 # ==============================================================================
-# Mrežne postavke UR robota
-#ROBOT_IP = "192.168.40.14"
-#ROBOT_IP = "192.168.80.128"
-ROBOT_IP = "192.168.40.18"
+# Glavni odabir modela robota:
+# True  = UR5e (e-Series, IP: 192.168.40.14, RoboDK: 'UR5e' / 'UR5e Base')
+# False = UR5  (CB3,      IP: 192.168.40.18, RoboDK: 'UR5'  / 'UR5 Base')
+IS_UR5E = False
+
+# Naziv modela robota (automatski postavljen prema IS_UR5E)
+ROBOT_MODEL_NAME = "UR5e" if IS_UR5E else "UR5"
+
+# Mrežne postavke UR robota (automatski prema odabiru IS_UR5E):
+# Za rad u simulaciji (URSim / PolyScope VM) po potrebi odkomentirajte:
+# ROBOT_IP = "192.168.80.128"
+ROBOT_IP = "192.168.40.14" if IS_UR5E else "192.168.40.18"
 ROBOT_PORT = 30002
 
 # Početni (Home) položaj zglobova robota (U STUPNJEVIMA °):
@@ -221,8 +229,8 @@ GRID_OFFSET_Y_STEP_MM = 120.0     # Pomak gore (+) ili dolje (-) po Y osi ploče
 # - OFFSET_H: horizontalni pomak (+udesno, -ulijevo) u mm
 # - OFFSET_V: vertikalni pomak (+gore, -dolje) u mm
 # - OFFSET_THETA: kutni pomak oko Z-osi ploče (+ CCW, - CW) u stupnjevima
-OFFSET_H = -3.3            # mm - pomak udesno (+) ili ulijevo (-) po osi ploče
-OFFSET_V = -1.9             # mm - pomak prema gore (+) ili prema dolje (-) po osi ploče
+OFFSET_H = 3.0            # mm - pomak udesno (+) ili ulijevo (-) po osi ploče
+OFFSET_V = -0.9             # mm - pomak prema gore (+) ili prema dolje (-) po osi ploče
 OFFSET_THETA = -0.2           # stupnjevi [°] - kutna korekcija rotacije oko Z-osi ploče
 
 TRAVEL_A = 1.2              # m/s^2 - akceleracija kretanja u zraku (prilaz/odmak)
@@ -239,9 +247,9 @@ BOARD_H_MM = 550.0          # mm - fizička visina ploče (između vanjskih rubo
 # ==============================================================================
 # 10. PARAMETRI ROBODK DIGITALNOG BLIZANCA (robodk_twin.py)
 # ==============================================================================
-# Nazivi robota i referentnog okvira baze u RoboDK stanici:
-ROBODK_ROBOT_NAME = "UR5"
-ROBODK_BASE_FRAME = "UR5 Base"
+# Nazivi robota i referentnog okvira baze u RoboDK stanici (automatski prema IS_UR5E):
+ROBODK_ROBOT_NAME = "UR5e" if IS_UR5E else "UR5"
+ROBODK_BASE_FRAME = "UR5e Base" if IS_UR5E else "UR5 Base"
 
 # Koeficijent brzine simulacije u RoboDK-u (fino usklađivanje s PolyScopeom / stvarnim robotom):
 # - 1.0 = nominalna brzina u realnom vremenu (1:1)
@@ -279,16 +287,21 @@ HAND_EYE_METHOD = cv2.CALIB_HAND_EYE_TSAI
 # False: translacija se sprema u metrima [m]
 HAND_EYE_OUTPUT_IN_MM = True
 
-# Kinematički parametri UR5 (CB3) robota za izravni izračun tool0 (flange) pozicije iz zglobova (DH parametri):
-# Omogućuje dohvat tool0 prirubnice neovisno o tome koji je TCP trenutno postavljen na robotu.
+# Kinematički parametri (DH parametri) za izravni izračun tool0 (flange) pozicije iz zglobova:
+# 1. UR5 (CB3 generacija)
 UR5_DH_D = [0.089159, 0.0, 0.0, 0.10915, 0.09465, 0.0823]        # m
 UR5_DH_A = [0.0, -0.425, -0.39225, 0.0, 0.0, 0.0]               # m
 UR5_DH_ALPHA = [np.pi / 2.0, 0.0, 0.0, np.pi / 2.0, -np.pi / 2.0, 0.0] # rad
 
-# Kompatibilnost s postojećim varijablama (UR5e DH parametri ako zatrebaju za usporedbu):
-UR5E_DH_D = UR5_DH_D
-UR5E_DH_A = UR5_DH_A
-UR5E_DH_ALPHA = UR5_DH_ALPHA
+# 2. UR5e (e-Series generacija)
+UR5E_DH_D = [0.1625, 0.0, 0.0, 0.1333, 0.0997, 0.0996]           # m
+UR5E_DH_A = [0.0, -0.425, -0.3922, 0.0, 0.0, 0.0]               # m
+UR5E_DH_ALPHA = [np.pi / 2.0, 0.0, 0.0, np.pi / 2.0, -np.pi / 2.0, 0.0] # rad
+
+# Aktivni DH parametri (automatski odabrani prema IS_UR5E):
+ACTIVE_DH_D = UR5E_DH_D if IS_UR5E else UR5_DH_D
+ACTIVE_DH_A = UR5E_DH_A if IS_UR5E else UR5_DH_A
+ACTIVE_DH_ALPHA = UR5E_DH_ALPHA if IS_UR5E else UR5_DH_ALPHA
 
 # Dozvola simulacije pri testiranju (ako kamera ili robot nisu fizički spojeni)
 ALLOW_OFFLINE_SIMULATION = True
