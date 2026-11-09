@@ -93,7 +93,8 @@ class TabGame(tk.Frame):
 
         # Tko crta mrežu (PLAYER ili ROBOT)
         self.opt_grid_drawers = ['PLAYER', 'ROBOT']
-        self.opt_grid_drawer_idx = 0       # Default: PLAYER
+        allow_player_grid = bool(getattr(config, 'ALLOW_PLAYER_DRAW_GRID', True))
+        self.opt_grid_drawer_idx = 0 if allow_player_grid else 1       # 0: PLAYER, 1: ROBOT
         self.selected_grid_size_mm = GRID_SIZE_MEDIUM_MM
         self.selected_grid_pos_y_mm = 0.0
 
@@ -228,21 +229,21 @@ class TabGame(tk.Frame):
                 relief=tk.FLAT, bd=0, padx=10, pady=3, cursor="hand2", command=on_next
             )
             btn_r.pack(side=tk.LEFT, padx=3)
-            return val_l
+            return val_l, btn_l, btn_r
 
-        self.lbl_opt_char = make_row(
+        self.lbl_opt_char, _, _ = make_row(
             menu_card, "Player's character:", self.opt_characters[self.opt_char_idx],
             lambda: self.cycle_option('char', -1), lambda: self.cycle_option('char', 1)
         )
-        self.lbl_opt_diff = make_row(
+        self.lbl_opt_diff, _, _ = make_row(
             menu_card, "Difficulty:", self.opt_difficulties[self.opt_diff_idx],
             lambda: self.cycle_option('diff', -1), lambda: self.cycle_option('diff', 1)
         )
-        self.lbl_opt_first = make_row(
+        self.lbl_opt_first, _, _ = make_row(
             menu_card, "First move:", self.opt_first_moves[self.opt_first_idx],
             lambda: self.cycle_option('first', -1), lambda: self.cycle_option('first', 1)
         )
-        self.lbl_opt_drawer = make_row(
+        self.lbl_opt_drawer, self.btn_drawer_prev, self.btn_drawer_next = make_row(
             menu_card, "Grid drawn by:", self.opt_grid_drawers[self.opt_grid_drawer_idx],
             lambda: self.cycle_option('drawer', -1), lambda: self.cycle_option('drawer', 1)
         )
@@ -259,13 +260,13 @@ class TabGame(tk.Frame):
         )
         lbl_rg_title.pack(anchor="w", pady=(0, 6))
 
-        self.lbl_opt_grid_size = make_row(
+        self.lbl_opt_grid_size, _, _ = make_row(
             self.robot_grid_options_frame, "Grid dimensions:", "Medium (150 mm)",
             lambda: self.cycle_option('grid_size', -1), lambda: self.cycle_option('grid_size', 1),
             width_title=16, width_val=15
         )
 
-        self.lbl_opt_grid_pos = make_row(
+        self.lbl_opt_grid_pos, self.btn_grid_pos_prev, self.btn_grid_pos_next = make_row(
             self.robot_grid_options_frame, "Board position:", "Center (0 mm)",
             lambda: self.cycle_option('grid_pos', -1), lambda: self.cycle_option('grid_pos', 1),
             width_title=16, width_val=15
@@ -288,9 +289,73 @@ class TabGame(tk.Frame):
         self._update_grid_size_ui()
         self._update_robot_grid_frame_visibility()
 
-        # ── DESNA KARTICA SA STRANE: KVAČICE ZA BILJEŽENJE METRIKA (OPERATOR ONLY) ──
-        metrics_card = tk.Frame(menu_wrapper, bg=self.app.bg_card, bd=1, relief=tk.SOLID, padx=28, pady=28)
-        metrics_card.pack(side=tk.LEFT, fill=tk.Y)
+        # ── DESNI PANEL SA STRANE: PRAVILA IGRE I BILJEŽENJE METRIKA (OPERATOR ONLY) ──
+        right_panel = tk.Frame(menu_wrapper, bg=self.app.bg_main)
+        right_panel.pack(side=tk.LEFT, fill=tk.Y)
+
+        # ── 1. GORNJA ZASEBNA KARTICA: PRAVILA IGRE I DOZVOLE PRIPREME MREŽE ──
+        rules_card = tk.Frame(right_panel, bg=self.app.bg_card, bd=1, relief=tk.SOLID, padx=24, pady=18)
+        rules_card.pack(fill=tk.X, pady=(0, 12))
+
+        lbl_rules_badge = tk.Label(
+            rules_card, text="🔒 OPERATOR CONTROLS",
+            font=("Segoe UI", 8, "bold"), fg="#10b981", bg="#132a22",
+            padx=8, pady=3
+        )
+        lbl_rules_badge.pack(anchor="w", pady=(0, 6))
+
+        tk.Label(
+            rules_card, text="📐 GRID PREPARATION PERMISSION",
+            font=("Segoe UI", 12, "bold"), fg=self.app.text_primary, bg=self.app.bg_card
+        ).pack(anchor="w", pady=(0, 2))
+
+        tk.Label(
+            rules_card, text="Configure whether players are allowed to draw the 3x3 grid:\n(Saved to config.py and synced live to mobile controller)",
+            font=("Segoe UI", 8), fg=self.app.text_secondary, bg=self.app.bg_card, justify="left"
+        ).pack(anchor="w", pady=(0, 10))
+
+        div_rules = tk.Frame(rules_card, bg=self.app.bg_card_secondary, height=2)
+        div_rules.pack(fill=tk.X, pady=(0, 10))
+
+        rules_frame = tk.Frame(rules_card, bg=self.app.bg_card_secondary, padx=14, pady=10)
+        rules_frame.pack(fill=tk.X)
+
+        self.var_allow_player_draw_grid = tk.BooleanVar(
+            value=bool(getattr(config, 'ALLOW_PLAYER_DRAW_GRID', True))
+        )
+
+        def on_toggle_player_draw_grid():
+            new_val = bool(self.var_allow_player_draw_grid.get())
+            try:
+                success, msg = update_config_values({'ALLOW_PLAYER_DRAW_GRID': new_val})
+                if success:
+                    self.app.status_log_add(f"[CONFIG] ALLOW_PLAYER_DRAW_GRID set to {new_val} (saved to config.py)")
+                else:
+                    self.app.status_log_add(f"[CONFIG ERROR] Failed to update ALLOW_PLAYER_DRAW_GRID: {msg}")
+            except Exception as e:
+                self.app.status_log_add(f"[CONFIG ERROR] Exception updating ALLOW_PLAYER_DRAW_GRID: {e}")
+            self.apply_player_draw_grid_permission(new_val)
+
+        chk_allow_player = tk.Checkbutton(
+            rules_frame, text="Allow player to draw grid",
+            variable=self.var_allow_player_draw_grid,
+            command=on_toggle_player_draw_grid,
+            font=("Segoe UI", 9, "bold"), fg=self.app.text_primary, bg=self.app.bg_card_secondary,
+            activebackground=self.app.bg_card_secondary, activeforeground=self.app.text_primary,
+            selectcolor="#111116", cursor="hand2"
+        )
+        chk_allow_player.pack(anchor="w", pady=(2, 0))
+
+        self.lbl_allow_player_desc = tk.Label(
+            rules_frame,
+            text="Uncheck to lock grid preparation to ROBOT across all screens.",
+            font=("Segoe UI", 8), fg=self.app.text_secondary, bg=self.app.bg_card_secondary
+        )
+        self.lbl_allow_player_desc.pack(anchor="w", padx=(24, 0), pady=(0, 4))
+
+        # ── 2. DONJA ZASEBNA KARTICA: METRIKA I BILJEŽENJE PODATAKA (ZASEBNA GRUPA) ──
+        metrics_card = tk.Frame(right_panel, bg=self.app.bg_card, bd=1, relief=tk.SOLID, padx=24, pady=18)
+        metrics_card.pack(fill=tk.BOTH, expand=True)
 
         lbl_op_badge = tk.Label(
             metrics_card, text="🔒 OPERATOR SETTINGS",
@@ -396,6 +461,9 @@ class TabGame(tk.Frame):
             font=("Segoe UI", 8), fg=self.app.text_secondary, bg=self.app.bg_card, justify="left"
         )
         info_box.pack(anchor="w")
+
+        # Inicijalna primjena dozvole crtanja mreže na GUI
+        self.apply_player_draw_grid_permission(bool(getattr(config, 'ALLOW_PLAYER_DRAW_GRID', True)))
 
     def build_tab3_game(self):
         """Kreira prikaz igre: digitalni kanvas s rotacijom i statusnu ploču."""
@@ -654,6 +722,8 @@ class TabGame(tk.Frame):
             val = self.opt_first_moves[self.opt_first_idx]
             self.lbl_opt_first.configure(text=val)
         elif opt_name == 'drawer':
+            if not getattr(config, 'ALLOW_PLAYER_DRAW_GRID', True):
+                return
             self.opt_grid_drawer_idx = (self.opt_grid_drawer_idx + direction) % len(self.opt_grid_drawers)
             val = self.opt_grid_drawers[self.opt_grid_drawer_idx]
             self.lbl_opt_drawer.configure(text=val)
@@ -675,6 +745,32 @@ class TabGame(tk.Frame):
                 self.robot_grid_options_frame.pack(fill=tk.X, pady=(6, 12), before=self.btn_start)
             else:
                 self.robot_grid_options_frame.pack_forget()
+
+    def apply_player_draw_grid_permission(self, allowed: bool):
+        """Primjenjuje dozvolu crtanja mreže na operatersko sučelje i ažurira gumbe."""
+        if not allowed:
+            if 'ROBOT' in self.opt_grid_drawers:
+                self.opt_grid_drawer_idx = self.opt_grid_drawers.index('ROBOT')
+            if hasattr(self, 'lbl_opt_drawer'):
+                self.lbl_opt_drawer.configure(text='ROBOT')
+            if hasattr(self, 'btn_drawer_prev') and hasattr(self, 'btn_drawer_next'):
+                self.btn_drawer_prev.configure(state=tk.DISABLED, bg="#22222a", fg="#666677", cursor="arrow")
+                self.btn_drawer_next.configure(state=tk.DISABLED, bg="#22222a", fg="#666677", cursor="arrow")
+            if hasattr(self, 'lbl_allow_player_desc'):
+                self.lbl_allow_player_desc.configure(
+                    text="🔒 LOCKED: Robot always draws grid (Player cannot draw).",
+                    fg="#f59e0b"
+                )
+        else:
+            if hasattr(self, 'btn_drawer_prev') and hasattr(self, 'btn_drawer_next'):
+                self.btn_drawer_prev.configure(state=tk.NORMAL, bg="#333342", fg="#ffffff", cursor="hand2")
+                self.btn_drawer_next.configure(state=tk.NORMAL, bg="#333342", fg="#ffffff", cursor="hand2")
+            if hasattr(self, 'lbl_allow_player_desc'):
+                self.lbl_allow_player_desc.configure(
+                    text="Uncheck to lock grid preparation to ROBOT across all screens.",
+                    fg=self.app.text_secondary
+                )
+        self._update_robot_grid_frame_visibility()
 
     def _update_grid_size_ui(self):
         """Ažurira prikaz odabrane veličine mreže i primjenjuje ograničenja pozicije."""
@@ -1240,6 +1336,10 @@ class TabGame(tk.Frame):
 
     def sync_metrics_checkboxes(self):
         """Usklađuje checkboxe u izborniku s trenutnim stanjem u config modulu."""
+        if hasattr(self, 'var_allow_player_draw_grid'):
+            allow = bool(getattr(config, 'ALLOW_PLAYER_DRAW_GRID', True))
+            self.var_allow_player_draw_grid.set(allow)
+            self.apply_player_draw_grid_permission(allow)
         if hasattr(self, 'var_record_stats'):
             self.var_record_stats.set(bool(getattr(config, 'RECORD_GAME_STATS', True)))
         if hasattr(self, 'var_record_confusion'):
@@ -1279,7 +1379,11 @@ class TabGame(tk.Frame):
             if hasattr(self, 'lbl_opt_first'):
                 self.lbl_opt_first.configure(text=first)
 
-        drawer = str(params.get('grid_drawer', 'PLAYER')).strip().upper()
+        allow_player = bool(getattr(config, 'ALLOW_PLAYER_DRAW_GRID', True))
+        if not allow_player:
+            drawer = 'ROBOT'
+        else:
+            drawer = str(params.get('grid_drawer', 'PLAYER')).strip().upper()
         if drawer in self.opt_grid_drawers:
             self.opt_grid_drawer_idx = self.opt_grid_drawers.index(drawer)
             if hasattr(self, 'lbl_opt_drawer'):
@@ -1441,6 +1545,7 @@ class TabGame(tk.Frame):
             'robot_model': getattr(config, 'ROBOT_MODEL_NAME', 'UR5e' if getattr(config, 'IS_UR5E', False) else 'UR5'),
             'difficulty': getattr(self, 'difficulty', 'MEDIUM'),
             'effective_first_move': self.effective_first_move,
+            'allow_player_draw_grid': bool(getattr(config, 'ALLOW_PLAYER_DRAW_GRID', True)),
             'grid_drawer': drawer,
             'grid_locked': bool(grid_locked),
             'grid_warning': grid_warning,

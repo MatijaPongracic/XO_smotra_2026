@@ -122,7 +122,7 @@ GRID_STABILITY_FRAMES = 10     # Broj uzastopnih mirnih frameova potrebnih za za
 GRID_STABILITY_TOLERANCE_PX = 8 # Maksimalno dozvoljeno titranje linija u pikselima
 
 # Stabilizacija simbola unutar ćelije
-SYMBOL_STABILITY_FRAMES = 4    # Broj uzastopnih frameova za potvrdu prepoznatog znaka unutar mreže
+SYMBOL_STABILITY_FRAMES = 3    # Broj uzastopnih frameova za potvrdu prepoznatog znaka unutar mreže
 SYMBOL_STABILITY_TOLERANCE_PX = 8 # Maksimalno dozvoljeno titranje centra znaka u pikselima
 MAX_SYMBOL_CELL_AREA_RATIO = 1.5 # Maksimalni dozvoljeni omjer površine simbola i površine srednjeg polja
 WIN_MOVE_STABILITY_HITS = 3    # Broj detektiranih frameova potrebnih za potvrdu zadnjeg (pobjedničkog) poteza čovjeka
@@ -151,7 +151,7 @@ YOLO_IMGSZ = 640               # Veličina slike za YOLO inferenciju
 # 7. PARAMETRI STANJA IGRE I DETEKCIJE ŠAKE (tab_game.py)
 # ==============================================================================
 # Detekcija šake (MediaPipe)
-HAND_STABILIZE_FRAMES = 4      # Broj uzastopnih frameova bez šake prije odmrzavanja kanvasa
+HAND_STABILIZE_FRAMES = 3      # Broj uzastopnih frameova bez šake prije odmrzavanja kanvasa
 HAND_MIN_DETECTION_CONF = 0.5  # Prag pouzdanosti detekcije šake
 HAND_MIN_TRACKING_CONF = 0.5   # Prag pouzdanosti praćenja šake
 
@@ -201,18 +201,18 @@ ROBOT_PORT = 30002
 #     Ako je zadana konkretna vrijednost (npr. -60.0), automatski izračun ne vrijedi
 #     nego se uzima točno ova zadana vrijednost u stupnjevima.
 # J2 do J6: Moraju imati zadane numeričke vrijednosti u stupnjevima (ne smiju biti None).
-J1 = 65.4
-J2 = -54.37
-J3 = 35.32
-J4 = -71.74
-J5 = -95.46
-J6 = 1.64
+J1 = 72.03
+J2 = -61.53
+J3 = 48.92
+J4 = -77.31
+J5 = -91.9
+J6 = 15.79
 
 # Parametri crtanja i brzine kretanja markera
 APPROACH_Z_OFFSET = 50.0   # mm - početna i završna visina prilaska/odmaka markera iznad ploče
 LIFT_Z_DELTA = 15.0        # mm - visinska razlika podizanja markera iznad DRAW_DEPTH (LIFT_Z_OFFSET = DRAW_DEPTH + LIFT_Z_DELTA)
-LIFT_Z_OFFSET = 10.0       # mm - visina podizanja markera pri prijelazu između dviju linija (crtanje 'X')
-DRAW_DEPTH = -5.0           # mm - dubina ulaska u ploču (stisak vrha markera)
+LIFT_Z_OFFSET = 13.0       # mm - visina podizanja markera pri prijelazu između dviju linija (crtanje 'X')
+DRAW_DEPTH = -2.0           # mm - dubina ulaska u ploču (stisak vrha markera)
 # Margina/odmak testnih linija za DRAW_DEPTH od unutarnjih rubova ArUco markera (u mm)
 TEST_DEPTH_MARKER_MARGIN = 50.0  # mm - razmak početka/kraja probnih linija od unutarnjeg ruba markera
 AREA_RATIO = 0.4           # Omjer površine kvadrata za crtanje i najmanjeg polja mreže (veći i jasniji simboli)
@@ -229,9 +229,9 @@ GRID_OFFSET_Y_STEP_MM = 120.0     # Pomak gore (+) ili dolje (-) po Y osi ploče
 # - OFFSET_H: horizontalni pomak (+udesno, -ulijevo) u mm
 # - OFFSET_V: vertikalni pomak (+gore, -dolje) u mm
 # - OFFSET_THETA: kutni pomak oko Z-osi ploče (+ CCW, - CW) u stupnjevima
-OFFSET_H = 3.0            # mm - pomak udesno (+) ili ulijevo (-) po osi ploče
-OFFSET_V = -0.9             # mm - pomak prema gore (+) ili prema dolje (-) po osi ploče
-OFFSET_THETA = -0.2           # stupnjevi [°] - kutna korekcija rotacije oko Z-osi ploče
+OFFSET_H = -16.9            # mm - pomak udesno (+) ili ulijevo (-) po osi ploče
+OFFSET_V = -18.2             # mm - pomak prema gore (+) ili prema dolje (-) po osi ploče
+OFFSET_THETA = 0.0           # stupnjevi [°] - kutna korekcija rotacije oko Z-osi ploče
 
 TRAVEL_A = 1.2              # m/s^2 - akceleracija kretanja u zraku (prilaz/odmak)
 TRAVEL_V = 0.35             # m/s   - brzina kretanja u zraku
@@ -317,3 +317,10 @@ WEB_GAME_OVER_TIMEOUT_SEC = 10    # Sekunde prikaza pobjednika prije automatskog
 ENABLE_PUBLIC_TUNNEL = True       # True: automatski pokreće Cloudflare HTTPS tunel za spajanje mobitela preko 4G/5G; False: samo lokalni Wi-Fi
 
 
+# ==============================================================================
+# 13. PRAVILA IGRE I DOZVOLE PRIPREME MREŽE (tab_game.py)
+# ==============================================================================
+# Dozvola igraču za samostalno crtanje 3x3 mreže:
+# True  = Igrač i operater mogu slobodno birati tko crta mrežu (PLAYER ili ROBOT)
+# False = Opcija je trajno zaključana na ROBOT (robot uvijek samostalno crta mrežu)
+ALLOW_PLAYER_DRAW_GRID = True

@@ -52,8 +52,11 @@
       <div class="controller-card">
         <div class="card-title"><span>📐</span> Who prepares the 3x3 grid?</div>
         <div class="btn-group" data-setting="grid_drawer">
-          <button class="btn-option active" data-value="PLAYER">✍️ PLAYER (OR ALREADY DRAWN)</button>
-          <button class="btn-option" data-value="ROBOT">🤖 ROBOT DRAWS</button>
+          <button id="btn-drawer-player" class="btn-option active" data-value="PLAYER">✍️ PLAYER (OR ALREADY DRAWN)</button>
+          <button id="btn-drawer-robot" class="btn-option" data-value="ROBOT">🤖 ROBOT DRAWS</button>
+        </div>
+        <div id="drawer-locked-hint" style="display: none; font-size: 11px; color: #f59e0b; margin-top: 8px; font-weight: 600;">
+          🔒 Operator locked grid preparation to ROBOT
         </div>
       </div>
 

@@ -167,6 +167,13 @@ async def serve_controller():
             html = html.replace("{{GRID_SMALL_LABEL}}", f"Small ({s_str}x{s_str} cm)")
             html = html.replace("{{GRID_MEDIUM_LABEL}}", f"Medium ({m_str}x{m_str} cm)")
             html = html.replace("{{GRID_LARGE_LABEL}}", f"Large ({l_str}x{l_str} cm)")
+
+            if not getattr(config, 'ALLOW_PLAYER_DRAW_GRID', True):
+                html = html.replace('id="btn-drawer-player" class="btn-option active"', 'id="btn-drawer-player" class="btn-option disabled" disabled')
+                html = html.replace('id="btn-drawer-robot" class="btn-option"', 'id="btn-drawer-robot" class="btn-option active"')
+                html = html.replace('id="robot-grid-options" class="controller-card" style="display: none;', 'id="robot-grid-options" class="controller-card" style="display: flex;')
+                html = html.replace('id="drawer-locked-hint" style="display: none;', 'id="drawer-locked-hint" style="display: block;')
+
             return HTMLResponse(content=html, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
         except Exception:
             return FileResponse(ctrl_path, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})

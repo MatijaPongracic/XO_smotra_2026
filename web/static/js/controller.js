@@ -18,6 +18,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const activeSection = document.getElementById('active-section');
   const robotGridOptions = document.getElementById('robot-grid-options');
   const robotGridPosHint = document.getElementById('robot-grid-pos-hint');
+  const btnDrawerPlayer = document.getElementById('btn-drawer-player');
+  const btnDrawerRobot = document.getElementById('btn-drawer-robot');
+  const drawerLockedHint = document.getElementById('drawer-locked-hint');
+
+  // Ako je server-side već zaključano crtanje mreže na robota
+  if (btnDrawerPlayer && (btnDrawerPlayer.disabled || btnDrawerPlayer.classList.contains('disabled'))) {
+    settings.grid_drawer = 'ROBOT';
+    if (robotGridOptions) robotGridOptions.style.display = 'flex';
+  }
 
   // Gumbi
   const btnStart = document.getElementById('btn-start-game');
@@ -179,8 +188,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  function updatePlayerDrawGridPermission(allowed) {
+    if (allowed === false) {
+      if (btnDrawerPlayer) {
+        btnDrawerPlayer.disabled = true;
+        btnDrawerPlayer.classList.remove('active');
+        btnDrawerPlayer.classList.add('disabled');
+      }
+      if (btnDrawerRobot) {
+        btnDrawerRobot.disabled = false;
+        btnDrawerRobot.classList.add('active');
+        btnDrawerRobot.classList.remove('disabled');
+      }
+      settings.grid_drawer = 'ROBOT';
+      if (robotGridOptions) {
+        robotGridOptions.style.display = 'flex';
+      }
+      if (drawerLockedHint) {
+        drawerLockedHint.style.display = 'block';
+      }
+    } else if (allowed === true) {
+      if (btnDrawerPlayer) {
+        btnDrawerPlayer.disabled = false;
+        btnDrawerPlayer.classList.remove('disabled');
+      }
+      if (drawerLockedHint) {
+        drawerLockedHint.style.display = 'none';
+      }
+    }
+  }
+
   function updateMobileUI(state) {
     if (!state) return;
+
+    if (state.allow_player_draw_grid !== undefined) {
+      updatePlayerDrawGridPermission(state.allow_player_draw_grid);
+    }
 
     if (state.grid_sizes) {
       updateGridSizeButtons(state.grid_sizes);

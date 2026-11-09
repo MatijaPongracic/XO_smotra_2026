@@ -23,9 +23,8 @@ mediapipe>=0.10.0
 # Robotika i digitalni blizanac
 robodk>=5.5.0
 
-# Web poslužitelj, WebSocket komunikacija i generiranje QR koda
+# Web server, WebSocket komunikacija i generiranje QR koda
 fastapi>=0.100.0
 uvicorn[standard]>=0.22.0
 websockets>=11.0
 qrcode>=7.4.0
-
