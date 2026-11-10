@@ -1,19 +1,6 @@
 """
-main.py - Glavni orkestrator i ulazna točka aplikacije za diplomski rad.
+main.py - Glavni orkestrator i ulazna točka aplikacije.
 Objedinjuje module i upravlja prozorom, temom, statusnim trakama i glavnom petljom.
-
-Modularna arhitektura:
-- config: Centralizirani parametri i postavke
-- camera_manager: Upravljanje RealSense kamerom i dretvom akvizicije
-- grid_tracker: Upravljanje stabilnošću i zaključavanjem mreže te maskama
-- vision_utils: Računalni vid, ArUco markeri i geometrija
-- grid_detector: Detekcija linija mreže, evaluacija ćelija i pobjednika
-- canvas_renderer: Iscrtavanje digitalnog kanvasa, detekcija i placeholder slika
-- minimax: Algoritmi odlučivanja po težinama (EASY, MEDIUM, HARD)
-- connect_robot: Povezivanje i kontrola kretanja robota
-- tab_calibration: Tab 1 - Intrinzična i 3D kalibracija kamere i ploče
-- tab_image_processing: Tab 2 - Obrada slike, binarizacija i YOLO detekcija
-- tab_game: Tab 3 - Stanje igre, MediaPipe detekcija šake, digitalni kanvas i robot
 """
 
 import os

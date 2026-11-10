@@ -78,7 +78,7 @@ class TabGame(tk.Frame):
         self.cell_interventions = {}       # (r, c) -> {'predicted': str, 'true': str} za ručne izmjene
         self.frozen_game_state = None      # Zamrznuto 3x3 stanje nakon kraja igre
         self.frozen_winning_line = None    # Koordinate pobjedničke linije
-        self.canvas_rotation = 0           # Kut rotacije kanvasa (0, 90, 180, 270)
+        self.canvas_rotation = int(getattr(config, 'CANVAS_ROTATION_DEG', 0)) % 360  # Kut rotacije kanvasa (0, 90, 180, 270)
 
         # Opcije izbornika
         self.opt_characters = ['X', 'O']
@@ -604,6 +604,12 @@ class TabGame(tk.Frame):
         )
         btn_rotate_ccw.pack(side=tk.RIGHT, padx=(4, 6))
 
+        self.lbl_rot_badge = tk.Label(
+            canvas_header, text=f"🔄 ROT: {self.canvas_rotation}°", font=("Segoe UI", 9, "bold"),
+            fg="#60a5fa", bg=self.app.bg_card_secondary, padx=8, pady=4
+        )
+        self.lbl_rot_badge.pack(side=tk.RIGHT, padx=(4, 8))
+
         self.lbl_hand_badge = tk.Label(
             canvas_header, text="✋ HAND: NONE", font=("Segoe UI", 9, "bold"),
             fg=self.app.text_success, bg=self.app.bg_card_secondary, padx=8, pady=4
@@ -624,10 +630,23 @@ class TabGame(tk.Frame):
         Rotira digitalni kanvas:
         direction = 1  -> u smjeru kazaljke na satu (+90°)
         direction = -1 -> u suprotnom smjeru kazaljke na satu (-90°)
+        Automatski sprema novu rotaciju u config.py i radnu memoriju.
         """
         self.canvas_rotation = (self.canvas_rotation + direction * 90) % 360
         dir_text = "right (+90°)" if direction == 1 else "left (-90°)"
-        self.app.status_log_add(f"Digital canvas rotated {dir_text}. Current rotation: {self.canvas_rotation}°")
+
+        if hasattr(self, 'lbl_rot_badge'):
+            self.lbl_rot_badge.configure(text=f"🔄 ROT: {self.canvas_rotation}°")
+
+        try:
+            success, msg = update_config_values({'CANVAS_ROTATION_DEG': self.canvas_rotation})
+            if success:
+                self.app.status_log_add(f"Digital canvas rotated {dir_text}. Current rotation: {self.canvas_rotation}° (saved to config.py)")
+            else:
+                self.app.status_log_add(f"Digital canvas rotated {dir_text}. Current rotation: {self.canvas_rotation}° (config update error: {msg})")
+        except Exception as e:
+            self.app.status_log_add(f"Digital canvas rotated {dir_text}. Current rotation: {self.canvas_rotation}° (error: {e})")
+
         self.render_canvas()
 
     def render_canvas(self):

@@ -163,6 +163,9 @@ RECORD_GAME_STATS = True  # True: bilježi ishode igara u game_stats.txt; False:
 RECORD_CONFUSION_MATRIX = True  # True: ažurira matricu konfuzije u confusion_matrix.txt; False: ne mijenja datoteku
 TRACK_ROBOT_MOVES_IN_CONFUSION_MATRIX = False  # True: pasivno evaluira i robotove znakove u matrici; False: samo čovjekove poteze
 
+# Rotacija digitalnog prikaza ploče / kanvasa na svim sučeljima (0, 90, 180 ili 270 stupnjeva)
+CANVAS_ROTATION_DEG = 270
+
 
 # ==============================================================================
 # 8. PARAMETRI GRAFIČKOG SUČELJA I TEME (main.py)
